@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import Message, Notification, User, db
+from models import Message, User, db
 from auth import require_auth, get_current_user
 from utils.logger import log_user_action
 from datetime import datetime
@@ -29,11 +29,28 @@ def get_messages():
         query = query.filter_by(receiver_id=receiver_id)
     
     # VULNERABLE: Should filter by current user, but allows seeing all messages
-    messages = query.all()
+    # Order by most recent first
+    messages = query.order_by(Message.created_at.desc()).all()
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Calculate pagination
+    total = len(messages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_messages = messages[start:end]
     
     # VULNERABLE: XSS in content - no sanitization
     return jsonify({
-        'messages': [m.to_dict() for m in messages]
+        'messages': [m.to_dict() for m in paginated_messages],
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': (total + per_page - 1) // per_page
+        }
     })
 
 @bp.route('/<int:message_id>', methods=['GET'])
@@ -89,15 +106,6 @@ def send_message():
     )
     
     db.session.add(message)
-    
-    # Create notification - VULNERABLE: XSS in notification message
-    notification = Notification(
-        user_id=receiver_id,
-        message=f"New message from {user.username}: {subject}",  # VULNERABLE: XSS
-        type='message_received'
-    )
-    db.session.add(notification)
-    
     db.session.commit()
     
     log_user_action(user.id, 'send_message', f"To: {receiver_id}, Subject: {subject}, Content: {content}")
@@ -127,46 +135,6 @@ def delete_message(message_id):
     log_user_action(user.id, 'delete_message', f"Message ID: {message_id}")
     
     return jsonify({'message': 'Message deleted successfully'})
-
-@bp.route('/notifications', methods=['GET'])
-@require_auth
-def get_notifications():
-    """Get notifications - VULNERABLE: XSS in notification messages"""
-    user = get_current_user()
-    
-    # VULNERABLE: Should only get current user's notifications, but query allows filtering
-    is_read = request.args.get('is_read')
-    
-    query = Notification.query.filter_by(user_id=user.id)
-    
-    if is_read is not None:
-        query = query.filter_by(is_read=is_read.lower() == 'true')
-    
-    notifications = query.order_by(Notification.created_at.desc()).all()
-    
-    # VULNERABLE: XSS in message - no sanitization
-    return jsonify({
-        'notifications': [n.to_dict() for n in notifications]
-    })
-
-@bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
-@require_auth
-def mark_notification_read(notification_id):
-    """Mark notification as read - VULNERABLE: IDOR"""
-    user = get_current_user()
-    
-    notification = Notification.query.get(notification_id)
-    
-    if not notification:
-        return jsonify({'error': 'Notification not found'}), 404
-    
-    # VULNERABLE: IDOR - no check if notification belongs to user
-    # Should check: notification.user_id == user.id
-    
-    notification.is_read = True
-    db.session.commit()
-    
-    return jsonify({'message': 'Notification marked as read'})
 
 @bp.route('/search', methods=['GET'])
 @require_auth

@@ -27,13 +27,16 @@ def get_users():
         # VULNERABLE: SQL Injection
         query = f"SELECT * FROM users WHERE username LIKE '%{search}%' OR email LIKE '%{search}%'"
         result = db.session.execute(text(query))
-        users = [dict(row) for row in result]
+        # Convert raw SQL results to dictionaries
+        users = [dict(row._mapping) for row in result]
     else:
         users = User.query.all()
+        # Convert User objects to dictionaries
+        users = [u.to_dict() for u in users]
     
     # VULNERABLE: Exposes password hashes and API keys
     return jsonify({
-        'users': [u.to_dict() for u in users]
+        'users': users
     })
 
 @bp.route('/users/<int:user_id>', methods=['GET'])
@@ -50,6 +53,136 @@ def get_user(user_id):
     # VULNERABLE: Exposes sensitive data
     return jsonify({
         'user': user.to_dict()
+    })
+
+@bp.route('/users', methods=['POST'])
+@require_auth
+def create_user():
+    """Create new user - VULNERABLE: Should be admin-only, weak validation, IDOR"""
+    user = get_current_user()
+    
+    # VULNERABLE: Broken access control - should check user.role == 'admin'
+    # Currently any authenticated user can create users
+    
+    data = request.get_json() or request.form
+    
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'team_member')
+    
+    # VULNERABLE: Weak validation
+    if not username or not email or not password:
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # VULNERABLE: No password strength requirements
+    # VULNERABLE: No email validation
+    # VULNERABLE: No role validation (can set any role including admin)
+    
+    # Check if user exists
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 400
+    
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already exists'}), 400
+    
+    # VULNERABLE: Can create admin users without proper authorization
+    new_user = User(username=username, email=email, role=role)
+    new_user.set_password(password)  # VULNERABLE: Uses MD5 hashing
+    
+    # VULNERABLE: Generate API key in plain text
+    import hashlib
+    new_user.api_key = f"{username}_api_key_{hashlib.md5(password.encode()).hexdigest()}"
+    
+    db.session.add(new_user)
+    db.session.commit()
+    
+    log_user_action(user.id, 'create_user', f"Created user: {username} with role: {role}")
+    
+    return jsonify({
+        'message': 'User created successfully',
+        'user': new_user.to_dict()  # VULNERABLE: Exposes sensitive data
+    }), 201
+
+@bp.route('/users/<int:user_id>', methods=['PUT'])
+@require_auth
+def update_user(user_id):
+    """Update user - VULNERABLE: Should be admin-only, IDOR, weak validation"""
+    current_user = get_current_user()
+    
+    # VULNERABLE: Broken access control - should check current_user.role == 'admin'
+    # VULNERABLE: IDOR - users can update other users' data
+    
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    data = request.get_json() or request.form
+    
+    # VULNERABLE: No validation on what fields can be updated
+    # VULNERABLE: Can change own role to admin
+    if 'username' in data:
+        # Check if username is already taken by another user
+        existing = User.query.filter_by(username=data['username']).first()
+        if existing and existing.id != user_id:
+            return jsonify({'error': 'Username already exists'}), 400
+        user.username = data['username']
+    
+    if 'email' in data:
+        # Check if email is already taken by another user
+        existing = User.query.filter_by(email=data['email']).first()
+        if existing and existing.id != user_id:
+            return jsonify({'error': 'Email already exists'}), 400
+        user.email = data['email']
+    
+    if 'password' in data:
+        # VULNERABLE: No password strength requirements
+        # VULNERABLE: Can change any user's password
+        user.set_password(data['password'])
+        # Regenerate API key
+        import hashlib
+        user.api_key = f"{user.username}_api_key_{hashlib.md5(data['password'].encode()).hexdigest()}"
+    
+    if 'role' in data:
+        # VULNERABLE: Can change any user's role, including promoting to admin
+        user.role = data['role']
+    
+    db.session.commit()
+    
+    log_user_action(current_user.id, 'update_user', f"Updated user ID: {user_id}")
+    
+    return jsonify({
+        'message': 'User updated successfully',
+        'user': user.to_dict()  # VULNERABLE: Exposes sensitive data
+    })
+
+@bp.route('/users/<int:user_id>', methods=['DELETE'])
+@require_auth
+def delete_user(user_id):
+    """Delete user - VULNERABLE: Should be admin-only, IDOR, no cascade checks"""
+    current_user = get_current_user()
+    
+    # VULNERABLE: Broken access control - should check current_user.role == 'admin'
+    # VULNERABLE: IDOR - users can delete other users
+    # VULNERABLE: Can delete admin users
+    
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # VULNERABLE: No check if user is trying to delete themselves
+    # VULNERABLE: No cascade deletion checks (orphaned projects, tasks, etc.)
+    
+    username = user.username
+    db.session.delete(user)
+    db.session.commit()
+    
+    log_user_action(current_user.id, 'delete_user', f"Deleted user: {username} (ID: {user_id})")
+    
+    return jsonify({
+        'message': 'User deleted successfully'
     })
 
 @bp.route('/projects', methods=['GET'])

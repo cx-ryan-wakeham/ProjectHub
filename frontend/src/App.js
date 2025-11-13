@@ -6,6 +6,7 @@ import TaskList from './components/TaskList';
 import DocumentUpload from './components/DocumentUpload';
 import MessageCenter from './components/MessageCenter';
 import ProjectDetail from './components/ProjectDetail';
+import UserManagement from './components/UserManagement';
 import api from './services/api';
 import './index.css';
 
@@ -58,7 +59,10 @@ function App() {
               <Link to="/tasks">Tasks</Link>
               <Link to="/documents">Documents</Link>
               <Link to="/messages">Messages</Link>
-              <span style={{ color: 'white', margin: '0 1rem' }}>Welcome, {user.username}</span>
+              {user.role === 'admin' && (
+                <Link to="/users">User Management</Link>
+              )}
+              <span style={{ color: 'white', padding: '0.5rem 1rem' }}>Welcome, {user.username}</span>
               <button className="button" onClick={handleLogout}>Logout</button>
             </nav>
           </header>
@@ -82,6 +86,9 @@ function App() {
           </Route>
           <Route path="/projects/:id">
             {user ? <ProjectDetail user={user} /> : <Redirect to="/" />}
+          </Route>
+          <Route path="/users">
+            {user && user.role === 'admin' ? <UserManagement user={user} /> : <Redirect to="/dashboard" />}
           </Route>
         </Switch>
       </div>

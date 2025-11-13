@@ -1,5 +1,5 @@
 # Database initialization and connection setup
-from models import db, User, Project, Task, Document, Message, Comment, Notification
+from models import db, User, Project, Task, Document, Message, Comment
 from config import Config
 import hashlib
 import os
@@ -26,8 +26,10 @@ def seed_data(app):
             return
         
         try:
-            # Get admin user
-            admin = User.query.filter_by(username='admin').first()
+            # Get admin user (check both 'admin' and 'Admin' for backward compatibility)
+            admin = User.query.filter_by(username='Admin').first()
+            if not admin:
+                admin = User.query.filter_by(username='admin').first()
             if not admin:
                 print("Warning: Admin user not found, cannot seed data")
                 return
@@ -35,23 +37,25 @@ def seed_data(app):
             # Create additional test users
             test_users = []
             user_data = [
-            {'username': 'alice', 'email': 'alice@projecthub.com', 'role': 'project_manager'},
-            {'username': 'bob', 'email': 'bob@projecthub.com', 'role': 'team_member'},
-            {'username': 'charlie', 'email': 'charlie@projecthub.com', 'role': 'team_member'},
-            {'username': 'diana', 'email': 'diana@projecthub.com', 'role': 'team_member'},
-            {'username': 'eve', 'email': 'eve@projecthub.com', 'role': 'project_manager'},
+            {'username': 'Alice', 'email': 'alice@projecthub.com', 'role': 'project_manager'},
+            {'username': 'Bob', 'email': 'bob@projecthub.com', 'role': 'team_member'},
+            {'username': 'Charlie', 'email': 'charlie@projecthub.com', 'role': 'team_member'},
+            {'username': 'Diana', 'email': 'diana@projecthub.com', 'role': 'team_member'},
+            {'username': 'Eve', 'email': 'eve@projecthub.com', 'role': 'project_manager'},
             ]
             
             for user_info in user_data:
                 user = User.query.filter_by(username=user_info['username']).first()
                 if not user:
+                    # Password is same as username (capitalized)
+                    password = user_info['username']
                     user = User(
                         username=user_info['username'],
                         email=user_info['email'],
                         role=user_info['role']
                     )
-                    user.set_password('password123')
-                    user.api_key = f"{user_info['username']}_api_key_{hashlib.md5('password123'.encode()).hexdigest()}"
+                    user.set_password(password)
+                    user.api_key = f"{user_info['username']}_api_key_{hashlib.md5(password.encode()).hexdigest()}"
                     db.session.add(user)
                     test_users.append(user)
             
@@ -195,30 +199,219 @@ def seed_data(app):
             print(f"Created {comment_count} comments")
             
             # Create messages
-            message_subjects = [
-                "Project Update Required",
-                "Meeting Scheduled",
-                "Code Review Request",
-                "Urgent: Bug Fix Needed",
-                "Weekly Status Report",
-                "New Feature Proposal",
-                "Security Alert",
-                "Deployment Notice",
-                "Documentation Request",
-                "Team Standup Reminder"
+            # Realistic message templates with varied content
+            message_templates = [
+                {
+                    'subject': 'Project Update Required',
+                    'content': 'Hi, could you please provide an update on the current status of the project? We need to report progress to stakeholders by end of week.'
+                },
+                {
+                    'subject': 'Meeting Scheduled',
+                    'content': 'I\'ve scheduled a team meeting for tomorrow at 2 PM to discuss the upcoming sprint. Please confirm your availability.'
+                },
+                {
+                    'subject': 'Code Review Request',
+                    'content': 'I\'ve submitted a pull request for the authentication module. Could you take a look when you have a chance? The changes are in the auth branch.'
+                },
+                {
+                    'subject': 'Urgent: Bug Fix Needed',
+                    'content': 'We\'ve identified a critical bug in the payment processing flow. The issue occurs when users try to complete checkout. Can you prioritize this?'
+                },
+                {
+                    'subject': 'Weekly Status Report',
+                    'content': 'Here\'s this week\'s status report:\n\n- Completed user authentication module\n- Fixed 3 critical bugs\n- Started work on dashboard redesign\n\nLet me know if you need any additional details.'
+                },
+                {
+                    'subject': 'New Feature Proposal',
+                    'content': 'I\'ve drafted a proposal for the new notification system. The document outlines the architecture and implementation approach. Would love to get your feedback before we proceed.'
+                },
+                {
+                    'subject': 'Security Alert',
+                    'content': 'We detected some unusual activity in the logs. I\'ve temporarily locked the affected accounts. Can we schedule a quick call to review the security measures?'
+                },
+                {
+                    'subject': 'Deployment Notice',
+                    'content': 'The latest version has been deployed to staging. All tests passed successfully. Planning to push to production tomorrow morning if everything looks good.'
+                },
+                {
+                    'subject': 'Documentation Request',
+                    'content': 'Could you update the API documentation for the new endpoints? We need to include examples for the authentication and user management endpoints.'
+                },
+                {
+                    'subject': 'Team Standup Reminder',
+                    'content': 'Just a reminder that our daily standup is at 9 AM. Please come prepared with your updates on what you completed yesterday and what you plan to work on today.'
+                },
+                {
+                    'subject': 'Database Migration',
+                    'content': 'I\'ve prepared the migration script for the schema changes. It needs to be run during the maintenance window this weekend. Can you review the script?'
+                },
+                {
+                    'subject': 'Performance Issue',
+                    'content': 'Users are reporting slow response times on the dashboard page. I\'ve identified a few potential bottlenecks. Should we schedule a performance optimization session?'
+                },
+                {
+                    'subject': 'Client Feedback',
+                    'content': 'The client reviewed the latest prototype and provided some feedback. They\'re happy with the overall direction but requested a few UI tweaks. I\'ve attached their comments.'
+                },
+                {
+                    'subject': 'API Integration',
+                    'content': 'The third-party API integration is complete. I\'ve tested all the endpoints and everything is working as expected. The documentation is in the shared drive.'
+                },
+                {
+                    'subject': 'Testing Results',
+                    'content': 'All unit tests are passing. However, we have 2 failing integration tests related to the payment flow. I\'m investigating the root cause.'
+                },
+                {
+                    'subject': 'Budget Approval',
+                    'content': 'The budget for Q4 has been approved. We can proceed with the infrastructure upgrades we discussed. I\'ll send the purchase orders next week.'
+                },
+                {
+                    'subject': 'Training Session',
+                    'content': 'I\'ve scheduled a training session on the new deployment process for next Tuesday. All team members are invited. The session will cover CI/CD best practices.'
+                },
+                {
+                    'subject': 'Dependency Update',
+                    'content': 'We need to update several dependencies to address security vulnerabilities. I\'ve created a branch with the updates. Please test thoroughly before we merge.'
+                },
+                {
+                    'subject': 'User Feedback',
+                    'content': 'Received positive feedback from beta users about the new search feature. They particularly liked the improved filtering options. Great work on this!'
+                },
+                {
+                    'subject': 'Sprint Planning',
+                    'content': 'Sprint planning meeting is scheduled for Friday. Please review the backlog items and come prepared with estimates. We\'re aiming to finalize the sprint goals.'
+                },
+                {
+                    'subject': 'Infrastructure Maintenance',
+                    'content': 'Scheduled maintenance window for this Saturday from 2 AM to 4 AM. The database will be unavailable during this time. I\'ll send a reminder closer to the date.'
+                },
+                {
+                    'subject': 'Design Review',
+                    'content': 'The design team has completed the mockups for the new user interface. They\'re available for review in Figma. Let me know your thoughts.'
+                },
+                {
+                    'subject': 'Compliance Check',
+                    'content': 'We need to complete the compliance audit by end of month. I\'ve prepared a checklist of items we need to verify. Can you help review the security measures?'
+                },
+                {
+                    'subject': 'Release Notes',
+                    'content': 'I\'ve drafted the release notes for version 2.1. Please review and let me know if you want to add or modify anything before we publish.'
+                },
+                {
+                    'subject': 'Customer Support',
+                    'content': 'A customer reported an issue with the export functionality. They\'re unable to download reports in PDF format. I\'ve created a ticket and started investigating.'
+                },
+                {
+                    'subject': 'Code Review Complete',
+                    'content': 'I\'ve completed the code review for the pull request. Overall looks good, but I\'ve left a few comments about potential improvements. Please address them before we merge.'
+                },
+                {
+                    'subject': 'Sprint Retrospective',
+                    'content': 'The sprint retrospective is scheduled for this afternoon. Please come prepared to discuss what went well, what could be improved, and any blockers we encountered.'
+                },
+                {
+                    'subject': 'Database Backup',
+                    'content': 'The weekly database backup completed successfully. All data has been backed up to the secure storage location. Backup size: 2.3 GB.'
+                },
+                {
+                    'subject': 'New Team Member',
+                    'content': 'We have a new team member joining us next week. They\'ll be working on the frontend team. Please make them feel welcome and help them get up to speed.'
+                },
+                {
+                    'subject': 'API Rate Limits',
+                    'content': 'We\'re approaching the rate limits for our third-party API. I\'ve implemented caching to reduce the number of calls. We should monitor usage over the next few days.'
+                },
+                {
+                    'subject': 'Security Patch',
+                    'content': 'A critical security patch has been released for one of our dependencies. I\'ve tested it in staging and it looks good. Planning to deploy to production tonight.'
+                },
+                {
+                    'subject': 'Performance Metrics',
+                    'content': 'The performance metrics for this month look great. Average response time decreased by 15% and we\'ve had zero downtime. Keep up the excellent work!'
+                },
+                {
+                    'subject': 'Client Meeting',
+                    'content': 'We have a client meeting scheduled for next Tuesday at 10 AM. They want to discuss the roadmap for Q1. I\'ll send the agenda by end of week.'
+                },
+                {
+                    'subject': 'Documentation Update',
+                    'content': 'I\'ve updated the API documentation with the new endpoints. The documentation is now available in the developer portal. Please review and let me know if anything needs clarification.'
+                },
+                {
+                    'subject': 'Bug Triage',
+                    'content': 'We have 5 new bugs reported this week. I\'ve prioritized them based on severity. The critical ones need to be addressed by end of week. Check the bug tracker for details.'
+                },
+                {
+                    'subject': 'Infrastructure Scaling',
+                    'content': 'Due to increased traffic, we need to scale up our infrastructure. I\'ve provisioned additional servers and they\'re ready to go live. The scaling will happen automatically based on load.'
+                },
+                {
+                    'subject': 'Code Quality Metrics',
+                    'content': 'Our code quality metrics have improved significantly this quarter. Test coverage is up to 85% and we\'ve reduced technical debt by 30%. Great progress team!'
+                },
+                {
+                    'subject': 'Holiday Schedule',
+                    'content': 'The holiday schedule for December has been posted. Please update your availability in the calendar. We\'ll maintain minimal coverage during the holidays.'
+                },
+                {
+                    'subject': 'Feature Request',
+                    'content': 'A customer has requested a new feature for the dashboard. They want the ability to customize widget layouts. I\'ve added it to the backlog for prioritization.'
+                },
+                {
+                    'subject': 'Monitoring Alert',
+                    'content': 'We received an alert about high CPU usage on one of our servers. I\'ve investigated and it appears to be a temporary spike. Monitoring continues.'
+                },
+                {
+                    'subject': 'Team Lunch',
+                    'content': 'Team lunch is scheduled for Friday at noon. We\'ll be going to the new restaurant downtown. Please RSVP by Wednesday so I can make reservations.'
+                },
+                {
+                    'subject': 'Version Release',
+                    'content': 'Version 2.2 has been released to production. All new features are live and the deployment went smoothly. No issues reported so far.'
+                },
+                {
+                    'subject': 'Data Migration',
+                    'content': 'The data migration for the legacy system is complete. All historical data has been successfully migrated. I\'ve run validation checks and everything looks good.'
+                },
+                {
+                    'subject': 'Access Request',
+                    'content': 'I need access to the production database for troubleshooting. Could you please grant me temporary access? I\'ll only need it for a few hours.'
+                },
+                {
+                    'subject': 'Code Freeze',
+                    'content': 'Code freeze is in effect starting Monday. Only critical bug fixes will be allowed. All feature development should be completed and merged by end of day Friday.'
+                },
+                {
+                    'subject': 'Performance Testing',
+                    'content': 'I\'ve completed performance testing on the new feature. Results show it can handle 1000 concurrent users without issues. Ready for production deployment.'
+                },
+                {
+                    'subject': 'Third-Party Integration',
+                    'content': 'The integration with the new payment provider is complete. I\'ve tested all payment flows and everything is working correctly. We can start accepting payments through the new provider.'
+                },
+                {
+                    'subject': 'Backup Verification',
+                    'content': 'I\'ve verified the database backups and confirmed they\'re working correctly. Test restore was successful. All backups are being stored securely.'
+                },
+                {
+                    'subject': 'Team Offsite',
+                    'content': 'The team offsite is scheduled for next month. We\'ll be focusing on team building and strategic planning. More details to follow.'
+                }
             ]
             
             message_count = 0
-            for i in range(20):
+            for i in range(100):  # Doubled from 50 to 100 messages
                 sender_id = random.choice(user_ids)
                 receiver_id = random.choice([uid for uid in user_ids if uid != sender_id])
+                template = random.choice(message_templates)
+                # Messages go back as far as 6 months (180 days)
                 message = Message(
                     sender_id=sender_id,
                     receiver_id=receiver_id,
-                    subject=random.choice(message_subjects),
-                    content=f"This is a test message. The message contains some sample content for testing the messaging system.",
+                    subject=template['subject'],
+                    content=template['content'],
                     is_read=(i % 3 == 0),
-                    created_at=datetime.utcnow() - timedelta(days=random.randint(1, 14))
+                    created_at=datetime.utcnow() - timedelta(days=random.randint(0, 180), hours=random.randint(0, 23))
                 )
                 db.session.add(message)
                 message_count += 1
@@ -227,35 +420,6 @@ def seed_data(app):
             
             db.session.commit()
             print(f"Created {message_count} messages")
-            
-            # Create notifications
-            notification_types = ['task_assigned', 'message_received', 'project_updated', 'comment_added', 'task_completed']
-            notification_messages = {
-                'task_assigned': 'You have been assigned to a new task',
-                'message_received': 'You have received a new message',
-                'project_updated': 'A project you are following has been updated',
-                'comment_added': 'A new comment was added to a task',
-                'task_completed': 'A task has been marked as completed'
-            }
-            
-            notification_count = 0
-            for user_id in user_ids:
-                for i in range(random.randint(3, 7)):
-                    notif_type = random.choice(notification_types)
-                    notification = Notification(
-                        user_id=user_id,
-                        message=notification_messages.get(notif_type, 'You have a new notification'),
-                        type=notif_type,
-                        is_read=(i % 2 == 0),
-                        created_at=datetime.utcnow() - timedelta(days=random.randint(1, 7))
-                    )
-                    db.session.add(notification)
-                    notification_count += 1
-                    # Flush each notification individually to avoid bulk insert issues
-                    db.session.flush()
-            
-            db.session.commit()
-            print(f"Created {notification_count} notifications")
             
             # Create some document records (without actual files)
             document_count = 0
@@ -321,18 +485,23 @@ def init_db(app):
         db.create_all()
         
         # Create default admin user if it doesn't exist
-        admin = User.query.filter_by(username='admin').first()
+        # Check both 'Admin' and 'admin' for backward compatibility
+        admin = User.query.filter_by(username='Admin').first()
         if not admin:
+            admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            # Password is same as username
+            admin_password = 'Admin'
             admin = User(
-                username='admin',
+                username='Admin',
                 email=Config.ADMIN_EMAIL,
                 role='admin'
             )
-            admin.set_password(Config.ADMIN_PASSWORD)
+            admin.set_password(admin_password)
             admin.api_key = "admin_api_key_12345"  # VULNERABLE: Hardcoded API key
             db.session.add(admin)
             db.session.commit()
-            print(f"Created admin user: {Config.ADMIN_EMAIL} / {Config.ADMIN_PASSWORD}")
+            print(f"Created admin user: {Config.ADMIN_EMAIL} / {admin_password}")
         
         # Seed test data (only if database is empty)
         seed_data(app)
