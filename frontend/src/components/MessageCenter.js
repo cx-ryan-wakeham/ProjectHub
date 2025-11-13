@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 function MessageCenter({ user }) {
@@ -12,13 +12,7 @@ function MessageCenter({ user }) {
   });
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadMessages();
-    loadNotifications();
-    loadUsers();
-  }, []);
-
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       const response = await api.get('/messages', {
         params: { receiver_id: user.id }
@@ -27,25 +21,31 @@ function MessageCenter({ user }) {
     } catch (error) {
       console.error('Error loading messages:', error);
     }
-  };
+  }, [user.id]);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       const response = await api.get('/messages/notifications');
       setNotifications(response.data.notifications);
     } catch (error) {
       console.error('Error loading notifications:', error);
     }
-  };
+  }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const response = await api.get('/api/v1/users');
       setUsers(response.data.users);
     } catch (error) {
       console.error('Error loading users:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadMessages();
+    loadNotifications();
+    loadUsers();
+  }, [loadMessages, loadNotifications, loadUsers]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();

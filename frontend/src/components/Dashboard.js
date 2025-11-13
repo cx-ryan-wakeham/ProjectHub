@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 
@@ -7,12 +7,7 @@ function Dashboard({ user }) {
   const [stats, setStats] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    loadProjects();
-    loadStats();
-  }, []);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       const response = await api.get('/projects', {
         params: { search: searchQuery }
@@ -21,16 +16,28 @@ function Dashboard({ user }) {
     } catch (error) {
       console.error('Error loading projects:', error);
     }
-  };
+  }, [searchQuery]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
-      const response = await api.get('/api/v1/stats');
+      const response = await api.get('/v1/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Error loading stats:', error);
+      // Fallback: try alternative endpoint
+      try {
+        const altResponse = await api.get('/stats');
+        setStats(altResponse.data);
+      } catch (altError) {
+        console.error('Error loading stats from alternative endpoint:', altError);
+      }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadProjects();
+    loadStats();
+  }, [loadProjects, loadStats]);
 
   const handleSearch = (e) => {
     e.preventDefault();

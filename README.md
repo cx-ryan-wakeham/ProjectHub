@@ -31,9 +31,73 @@ ProjectHub is designed to help security professionals, developers, and students 
 ### Prerequisites
 
 - Docker and Docker Compose
-- Python 3.7+
-- Node.js 10+
-- PostgreSQL (if running locally)
+- Python 3.7+ (for local development)
+- Node.js 10+ (for local development)
+- PostgreSQL (if running locally without Docker)
+
+### Key Commands
+
+#### Build and Start
+
+**Build all containers:**
+```bash
+docker-compose -f docker/docker-compose.yml build
+```
+
+**Build without cache (clean build):**
+```bash
+docker-compose -f docker/docker-compose.yml build --no-cache
+```
+
+**Start all services:**
+```bash
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+**Build and start in one command:**
+```bash
+docker-compose -f docker/docker-compose.yml up -d --build
+```
+
+#### Shutdown
+
+**Stop all services (keeps containers):**
+```bash
+docker-compose -f docker/docker-compose.yml stop
+```
+
+**Stop and remove containers:**
+```bash
+docker-compose -f docker/docker-compose.yml down
+```
+
+**Stop and remove containers + volumes (⚠️ deletes database data):**
+```bash
+docker-compose -f docker/docker-compose.yml down -v
+```
+
+#### Useful Commands
+
+**View logs:**
+```bash
+# All services
+docker-compose -f docker/docker-compose.yml logs -f
+
+# Specific service
+docker-compose -f docker/docker-compose.yml logs -f backend
+docker-compose -f docker/docker-compose.yml logs -f frontend
+```
+
+**Check service status:**
+```bash
+docker-compose -f docker/docker-compose.yml ps
+```
+
+**Restart a specific service:**
+```bash
+docker-compose -f docker/docker-compose.yml restart backend
+docker-compose -f docker/docker-compose.yml restart frontend
+```
 
 ### Running with Docker
 
@@ -43,20 +107,47 @@ git clone <repository-url>
 cd ProjectHub
 ```
 
-2. Start all services:
+2. Build and start all services:
 ```bash
-docker-compose -f docker/docker-compose.yml up --build
+docker-compose -f docker/docker-compose.yml up -d --build
 ```
 
-3. Access the application:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- Database: localhost:5432
+3. Wait for services to initialize (database seeding happens automatically on first startup)
+
+4. Access the application:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+- **Nginx (Production)**: http://localhost:80
+- **Database**: localhost:5432
+
+### Database Seeding
+
+The application automatically seeds the database with test data on first startup. This includes:
+- Test users (admin, developers, managers)
+- Sample projects
+- Tasks and comments
+- Messages and notifications
+- Document records
+
+**Note**: Seeding only occurs if the database is empty. To re-seed, remove the database volume:
+```bash
+docker-compose -f docker/docker-compose.yml down -v
+docker-compose -f docker/docker-compose.yml up -d
+```
+
+To skip seeding, set the environment variable `SKIP_SEED=true` in the backend service.
 
 ### Default Credentials
 
-- **Admin User**: admin@projecthub.com / admin123
-- **Database**: projecthub / password123
+**Application Users** (seeded automatically):
+- **Admin**: admin@projecthub.com / admin123
+- **Developer**: dev@projecthub.com / dev123
+- **Manager**: manager@projecthub.com / manager123
+
+**Database**:
+- **User**: projecthub
+- **Password**: password123
+- **Database**: projecthub
 
 ## Project Structure
 
@@ -65,21 +156,45 @@ ProjectHub/
 ├── backend/              # Flask backend application
 │   ├── app.py          # Main Flask app
 │   ├── models.py       # Database models
-│   ├── routes/         # Route handlers
+│   ├── database.py     # Database initialization and seeding
 │   ├── auth.py         # Authentication logic
-│   └── config.py       # Configuration (with hardcoded secrets)
+│   ├── config.py       # Configuration (with hardcoded secrets)
+│   ├── docker-entrypoint.sh  # Container startup script
+│   ├── routes/         # Route handlers
+│   │   ├── api.py      # General API routes
+│   │   ├── auth.py      # Authentication routes
+│   │   ├── projects.py # Project management routes
+│   │   ├── tasks.py    # Task management routes
+│   │   ├── documents.py # Document management routes
+│   │   ├── messages.py  # Messaging routes
+│   │   └── notifications.py # Notification routes
+│   └── utils/          # Utility modules
+│       ├── logger.py   # Logging configuration
+│       └── file_handler.py # File handling utilities
 ├── frontend/           # React frontend application
 │   ├── src/
 │   │   ├── components/  # React components
-│   │   └── services/     # API client
+│   │   │   ├── Dashboard.js
+│   │   │   ├── Login.js
+│   │   │   ├── TaskList.js
+│   │   │   ├── MessageCenter.js
+│   │   │   └── DocumentUpload.js
+│   │   ├── services/     # API client
+│   │   │   └── api.js
+│   │   ├── App.js       # Main React component
+│   │   └── index.js     # Entry point
+│   ├── Dockerfile      # Frontend Dockerfile
 │   └── package.json
 ├── docker/             # Docker configuration
 │   ├── Dockerfile      # Backend Dockerfile
-│   └── docker-compose.yml
+│   ├── docker-compose.yml # Service orchestration
+│   └── nginx.conf      # Nginx reverse proxy config
 ├── infrastructure/     # Terraform IaC
 │   ├── main.tf        # AWS resources
 │   ├── s3.tf          # S3 bucket configuration
-│   └── iam.tf         # IAM roles and policies
+│   ├── iam.tf          # IAM roles and policies
+│   ├── variables.tf   # Terraform variables
+│   └── outputs.tf     # Terraform outputs
 └── .github/
     └── workflows/
         └── ci.yml      # GitHub Actions CI/CD
@@ -142,21 +257,45 @@ JWT tokens never expire and use a weak secret. Try decoding tokens at jwt.io.
 
 ## Development
 
-### Backend Setup
+### Local Development (without Docker)
+
+#### Backend Setup
 
 ```bash
 cd backend
 pip install -r requirements.txt
+
+# Set environment variables (or use .env file)
+export DATABASE_URL=postgresql://projecthub:password123@localhost:5432/projecthub
+export JWT_SECRET=secret_key_12345
+
+# Initialize database
+python -c "from database import init_db; from app import app; init_db(app)"
+
+# Run the application
 python app.py
 ```
 
-### Frontend Setup
+The backend will be available at http://localhost:5000
+
+#### Frontend Setup
 
 ```bash
 cd frontend
 npm install
+
+# Set API URL (or edit src/services/api.js)
+export REACT_APP_API_URL=http://localhost:5000/api
+
+# Run the development server
 npm start
 ```
+
+The frontend will be available at http://localhost:3000
+
+### Docker Development
+
+For development with hot-reload, the docker-compose.yml includes volume mounts that sync your local code changes into the containers. Simply edit files locally and the changes will be reflected in the running containers (frontend may require a page refresh).
 
 ## Infrastructure Deployment
 

@@ -44,8 +44,10 @@ RUN mkdir -p /app/uploads /app/logs && \
 
 # Copy and setup entrypoint
 COPY backend/docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh && \
+    sed -i 's/\r$//' /app/docker-entrypoint.sh
 
 # VULNERABLE: Running as root
-CMD ["/app/docker-entrypoint.sh"]
+# Use bash explicitly to handle volume mount permission issues
+CMD ["/bin/bash", "/app/docker-entrypoint.sh"]
 

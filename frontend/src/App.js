@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import TaskList from './components/TaskList';
 import DocumentUpload from './components/DocumentUpload';
 import MessageCenter from './components/MessageCenter';
+import ProjectDetail from './components/ProjectDetail';
 import api from './services/api';
 import './index.css';
 
@@ -78,6 +79,9 @@ function App() {
           </Route>
           <Route path="/messages">
             {user ? <MessageCenter user={user} /> : <Redirect to="/" />}
+          </Route>
+          <Route path="/projects/:id">
+            {user ? <ProjectDetail user={user} /> : <Redirect to="/" />}
           </Route>
         </Switch>
       </div>
