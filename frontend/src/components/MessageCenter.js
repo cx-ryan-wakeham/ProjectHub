@@ -34,8 +34,8 @@ function MessageCenter({ user }) {
 
   const loadUsers = useCallback(async () => {
     try {
-      const response = await api.get('/api/v1/users');
-      setUsers(response.data.users);
+      const response = await api.get('/v1/users');
+      setUsers(response.data.users || []);
     } catch (error) {
       console.error('Error loading users:', error);
     }

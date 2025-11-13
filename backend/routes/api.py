@@ -27,13 +27,16 @@ def get_users():
         # VULNERABLE: SQL Injection
         query = f"SELECT * FROM users WHERE username LIKE '%{search}%' OR email LIKE '%{search}%'"
         result = db.session.execute(text(query))
-        users = [dict(row) for row in result]
+        # Convert raw SQL results to dictionaries
+        users = [dict(row._mapping) for row in result]
     else:
         users = User.query.all()
+        # Convert User objects to dictionaries
+        users = [u.to_dict() for u in users]
     
     # VULNERABLE: Exposes password hashes and API keys
     return jsonify({
-        'users': [u.to_dict() for u in users]
+        'users': users
     })
 
 @bp.route('/users/<int:user_id>', methods=['GET'])
