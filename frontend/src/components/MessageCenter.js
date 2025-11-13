@@ -3,7 +3,6 @@ import api from '../services/api';
 
 function MessageCenter({ user }) {
   const [messages, setMessages] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [users, setUsers] = useState([]);
   const [newMessage, setNewMessage] = useState({
     receiver_id: '',
@@ -32,31 +31,6 @@ function MessageCenter({ user }) {
     }
   }, [user.id, currentPage]);
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      const response = await api.get('/messages/notifications');
-      const notifications = response.data.notifications || [];
-      setNotifications(notifications);
-      
-      // Auto-mark unread notifications as read when viewing
-      const unreadNotifications = notifications.filter(n => !n.is_read);
-      if (unreadNotifications.length > 0) {
-        // Mark all unread notifications as read
-        const markReadPromises = unreadNotifications.map(notif =>
-          api.post(`/messages/notifications/${notif.id}/read`).catch(err => {
-            console.error(`Error marking notification ${notif.id} as read:`, err);
-          })
-        );
-        await Promise.all(markReadPromises);
-        // Reload notifications to get updated read status
-        const updatedResponse = await api.get('/messages/notifications');
-        setNotifications(updatedResponse.data.notifications || []);
-      }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    }
-  }, []);
-
   const loadUsers = useCallback(async () => {
     try {
       const response = await api.get('/v1/users');
@@ -68,9 +42,8 @@ function MessageCenter({ user }) {
 
   useEffect(() => {
     loadMessages();
-    loadNotifications();
     loadUsers();
-  }, [loadMessages, loadNotifications, loadUsers]);
+  }, [loadMessages, loadUsers]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -96,25 +69,11 @@ function MessageCenter({ user }) {
     }
   };
 
-  // VULNERABLE: DOM-based XSS in notification display
-  useEffect(() => {
-    // VULNERABLE: Direct DOM manipulation with user input
-    notifications.forEach(notif => {
-      if (!notif.is_read) {
-        // VULNERABLE: No sanitization - allows XSS
-        const notificationElement = document.getElementById(`notif-${notif.id}`);
-        if (notificationElement) {
-          notificationElement.innerHTML = notif.message;
-        }
-      }
-    });
-  }, [notifications]);
-
   return (
     <div className="container">
-      <h2>Messages & Notifications</h2>
+      <h2>Messages</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div>
         <div>
           <div className="card" style={{ marginBottom: '2rem' }}>
             <h3>Send Message</h3>
@@ -203,57 +162,6 @@ function MessageCenter({ user }) {
               </div>
             )}
           </div>
-        </div>
-
-        <div>
-          <div className="card">
-            <h3>Notifications</h3>
-            {notifications.map(notif => (
-              <div
-                key={notif.id}
-                id={`notif-${notif.id}`}
-                className="card"
-                style={{
-                  marginBottom: '1rem',
-                  borderLeft: notif.is_read ? '4px solid transparent' : '4px solid #3498db',
-                  cursor: notif.is_read ? 'default' : 'pointer',
-                  position: 'relative'
-                }}
-                onClick={async () => {
-                  if (!notif.is_read) {
-                    try {
-                      await api.post(`/messages/notifications/${notif.id}/read`);
-                      // Update the notification in state
-                      setNotifications(prev => 
-                        prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n)
-                      );
-                    } catch (error) {
-                      console.error('Error marking notification as read:', error);
-                    }
-                  }
-                }}
-              >
-                {!notif.is_read && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '0.5rem',
-                    right: '0.5rem',
-                    fontSize: '0.75rem',
-                    color: '#3498db',
-                    fontWeight: 'bold'
-                  }}>
-                    Click to mark as read
-                  </span>
-                )}
-                {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
-                <div dangerouslySetInnerHTML={{ __html: notif.message }} />
-                <small style={{ display: 'block', marginTop: '0.5rem', color: '#999' }}>
-                  {new Date(notif.created_at).toLocaleString()}
-                </small>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

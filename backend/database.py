@@ -1,5 +1,5 @@
 # Database initialization and connection setup
-from models import db, User, Project, Task, Document, Message, Comment, Notification
+from models import db, User, Project, Task, Document, Message, Comment
 from config import Config
 import hashlib
 import os
@@ -420,35 +420,6 @@ def seed_data(app):
             
             db.session.commit()
             print(f"Created {message_count} messages")
-            
-            # Create notifications
-            notification_types = ['task_assigned', 'message_received', 'project_updated', 'comment_added', 'task_completed']
-            notification_messages = {
-                'task_assigned': 'You have been assigned to a new task',
-                'message_received': 'You have received a new message',
-                'project_updated': 'A project you are following has been updated',
-                'comment_added': 'A new comment was added to a task',
-                'task_completed': 'A task has been marked as completed'
-            }
-            
-            notification_count = 0
-            for user_id in user_ids:
-                for i in range(random.randint(3, 7)):
-                    notif_type = random.choice(notification_types)
-                    notification = Notification(
-                        user_id=user_id,
-                        message=notification_messages.get(notif_type, 'You have a new notification'),
-                        type=notif_type,
-                        is_read=(i % 2 == 0),
-                        created_at=datetime.utcnow() - timedelta(days=random.randint(1, 7))
-                    )
-                    db.session.add(notification)
-                    notification_count += 1
-                    # Flush each notification individually to avoid bulk insert issues
-                    db.session.flush()
-            
-            db.session.commit()
-            print(f"Created {notification_count} notifications")
             
             # Create some document records (without actual files)
             document_count = 0

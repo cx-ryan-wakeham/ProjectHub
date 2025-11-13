@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import Message, Notification, User, db
+from models import Message, User, db
 from auth import require_auth, get_current_user
 from utils.logger import log_user_action
 from datetime import datetime
@@ -106,15 +106,6 @@ def send_message():
     )
     
     db.session.add(message)
-    
-    # Create notification - VULNERABLE: XSS in notification message
-    notification = Notification(
-        user_id=receiver_id,
-        message=f"New message from {user.username}: {subject}",  # VULNERABLE: XSS
-        type='message_received'
-    )
-    db.session.add(notification)
-    
     db.session.commit()
     
     log_user_action(user.id, 'send_message', f"To: {receiver_id}, Subject: {subject}, Content: {content}")
@@ -144,46 +135,6 @@ def delete_message(message_id):
     log_user_action(user.id, 'delete_message', f"Message ID: {message_id}")
     
     return jsonify({'message': 'Message deleted successfully'})
-
-@bp.route('/notifications', methods=['GET'])
-@require_auth
-def get_notifications():
-    """Get notifications - VULNERABLE: XSS in notification messages"""
-    user = get_current_user()
-    
-    # VULNERABLE: Should only get current user's notifications, but query allows filtering
-    is_read = request.args.get('is_read')
-    
-    query = Notification.query.filter_by(user_id=user.id)
-    
-    if is_read is not None:
-        query = query.filter_by(is_read=is_read.lower() == 'true')
-    
-    notifications = query.order_by(Notification.created_at.desc()).all()
-    
-    # VULNERABLE: XSS in message - no sanitization
-    return jsonify({
-        'notifications': [n.to_dict() for n in notifications]
-    })
-
-@bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
-@require_auth
-def mark_notification_read(notification_id):
-    """Mark notification as read - VULNERABLE: IDOR"""
-    user = get_current_user()
-    
-    notification = Notification.query.get(notification_id)
-    
-    if not notification:
-        return jsonify({'error': 'Notification not found'}), 404
-    
-    # VULNERABLE: IDOR - no check if notification belongs to user
-    # Should check: notification.user_id == user.id
-    
-    notification.is_read = True
-    db.session.commit()
-    
-    return jsonify({'message': 'Notification marked as read'})
 
 @bp.route('/search', methods=['GET'])
 @require_auth
