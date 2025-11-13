@@ -11,7 +11,8 @@ ProjectHub is designed to help security professionals, developers, and students 
 - User authentication and authorization
 - Project and task management
 - Document upload and sharing
-- Messaging and notifications
+- Messaging system
+- User management (admin)
 - RESTful API endpoints
 - Docker containerization
 - AWS infrastructure as code (Terraform)
@@ -123,10 +124,10 @@ docker-compose -f docker/docker-compose.yml up -d --build
 ### Database Seeding
 
 The application automatically seeds the database with test data on first startup. This includes:
-- Test users (admin, developers, managers)
+- Test users (admin and team members)
 - Sample projects
 - Tasks and comments
-- Messages and notifications
+- Messages (100 messages with 50 unique templates, spanning 6 months)
 - Document records
 
 **Note**: Seeding only occurs if the database is empty. To re-seed, remove the database volume:
@@ -140,9 +141,14 @@ To skip seeding, set the environment variable `SKIP_SEED=true` in the backend se
 ### Default Credentials
 
 **Application Users** (seeded automatically):
-- **Admin**: admin@projecthub.com / admin123
-- **Developer**: dev@projecthub.com / dev123
-- **Manager**: manager@projecthub.com / manager123
+- **Admin**: admin@projecthub.com / Admin (password is same as username, capitalized)
+- **Alice**: alice@projecthub.com / Alice (project_manager)
+- **Bob**: bob@projecthub.com / Bob (team_member)
+- **Charlie**: charlie@projecthub.com / Charlie (team_member)
+- **Diana**: diana@projecthub.com / Diana (team_member)
+- **Eve**: eve@projecthub.com / Eve (project_manager)
+
+**Note**: Login is case-insensitive (you can use `admin`, `Admin`, or `ADMIN`), but passwords match the capitalized username.
 
 **Database**:
 - **User**: projecthub
@@ -161,13 +167,12 @@ ProjectHub/
 │   ├── config.py       # Configuration (with hardcoded secrets)
 │   ├── docker-entrypoint.sh  # Container startup script
 │   ├── routes/         # Route handlers
-│   │   ├── api.py      # General API routes
+│   │   ├── api.py      # General API routes (includes user management)
 │   │   ├── auth.py      # Authentication routes
 │   │   ├── projects.py # Project management routes
 │   │   ├── tasks.py    # Task management routes
 │   │   ├── documents.py # Document management routes
-│   │   ├── messages.py  # Messaging routes
-│   │   └── notifications.py # Notification routes
+│   │   └── messages.py  # Messaging routes
 │   └── utils/          # Utility modules
 │       ├── logger.py   # Logging configuration
 │       └── file_handler.py # File handling utilities
@@ -178,7 +183,9 @@ ProjectHub/
 │   │   │   ├── Login.js
 │   │   │   ├── TaskList.js
 │   │   │   ├── MessageCenter.js
-│   │   │   └── DocumentUpload.js
+│   │   │   ├── DocumentUpload.js
+│   │   │   ├── ProjectDetail.js
+│   │   │   └── UserManagement.js
 │   │   ├── services/     # API client
 │   │   │   └── api.js
 │   │   ├── App.js       # Main React component
@@ -220,13 +227,19 @@ This application intentionally contains numerous security vulnerabilities. See [
 ### Additional Vulnerabilities
 
 - Hardcoded secrets in configuration files
-- Insecure file uploads (no validation, dangerous file types)
+- Insecure file uploads (no validation, dangerous file types: php, exe, sh, etc.)
 - Path traversal vulnerabilities
 - Misconfigured cloud resources (S3 public access, excessive IAM permissions)
 - Hardcoded credentials in CI/CD pipelines
 - No Content Security Policy
-- Insecure token storage (localStorage)
+- Insecure token storage (localStorage - XSS risk)
 - No CSRF protection
+- Case-insensitive authentication (allows enumeration)
+- Weak password hashing (MD5)
+- Log injection vulnerabilities
+- Sensitive data in logs (passwords, API keys, JWT secrets)
+- Broken access control in user management (any user can create/update/delete users)
+- No input validation or sanitization
 
 ## Testing the Vulnerabilities
 

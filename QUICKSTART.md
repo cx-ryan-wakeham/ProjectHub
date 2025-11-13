@@ -65,9 +65,20 @@ docker-compose -f docker/docker-compose.yml up -d --build backend
 
 ## Default Credentials
 
-- **Admin**: admin@projecthub.com / admin123
-- **Developer**: dev@projecthub.com / dev123
-- **Manager**: manager@projecthub.com / manager123
+**Application Users** (seeded automatically):
+- **Admin**: admin@projecthub.com / Admin (password is same as username, capitalized)
+- **Alice**: alice@projecthub.com / Alice (project_manager)
+- **Bob**: bob@projecthub.com / Bob (team_member)
+- **Charlie**: charlie@projecthub.com / Charlie (team_member)
+- **Diana**: diana@projecthub.com / Diana (team_member)
+- **Eve**: eve@projecthub.com / Eve (project_manager)
+
+**Note**: Login is case-insensitive (you can use `admin`, `Admin`, or `ADMIN`), but passwords match the capitalized username.
+
+**Database**:
+- **User**: projecthub
+- **Password**: password123
+- **Database**: projecthub
 
 ## First Time Setup
 
@@ -77,15 +88,47 @@ docker-compose -f docker/docker-compose.yml up -d --build backend
    ```
 
 2. Wait for database seeding (automatic on first startup)
+   - Creates admin user and test users
+   - Seeds projects, tasks, comments, messages (100 messages with 50 templates, spanning 6 months)
+   - Creates document records
 
 3. Access the application at http://localhost:3000
 
+4. Login with any of the default credentials (see above)
+
 ## Re-seeding Database
 
-To reset and re-seed the database:
+To reset and re-seed the database (⚠️ deletes all data):
 
 ```bash
 docker-compose -f docker/docker-compose.yml down -v
 docker-compose -f docker/docker-compose.yml up -d
 ```
+
+**Note**: Seeding only occurs if the database is empty. To skip seeding, set `SKIP_SEED=true` in the backend service environment.
+
+## Key Features
+
+- **User Management** (Admin only): Create, update, delete users at `/users`
+- **Messages**: Send and receive messages with pagination (10 per page)
+- **Projects**: Create and manage projects
+- **Tasks**: Create tasks, add comments
+- **Documents**: Upload and download documents
+- **Dashboard**: View statistics and project list
+
+## Troubleshooting
+
+**Login issues?**
+- Ensure backend is running: `docker-compose -f docker/docker-compose.yml ps`
+- Check backend logs: `docker-compose -f docker/docker-compose.yml logs backend`
+- Verify database is accessible
+
+**Frontend not loading?**
+- Check frontend logs: `docker-compose -f docker/docker-compose.yml logs frontend`
+- Ensure frontend compiled successfully (look for "Compiled successfully!")
+
+**Database connection errors?**
+- Ensure database container is running
+- Check database logs: `docker-compose -f docker/docker-compose.yml logs db`
+- Verify credentials match in `backend/config.py`
 
