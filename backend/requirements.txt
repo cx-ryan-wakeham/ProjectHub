@@ -1,0 +1,17 @@
+# Outdated and vulnerable dependencies for security testing demonstration
+# WARNING: These versions contain known CVEs
+
+Flask==1.0.0
+Flask-SQLAlchemy==2.3.2
+Flask-CORS==3.0.7
+Flask-JWT-Extended==3.13.1
+psycopg2-binary==2.7.4
+PyJWT==1.6.4
+Werkzeug==0.14.1
+python-dotenv==0.10.0
+requests==2.20.0
+lxml==4.2.5
+Pillow==5.2.0
+python-magic==0.4.15
+PyYAML==3.13
+

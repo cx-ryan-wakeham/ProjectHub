@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:10  # VULNERABLE: Outdated PostgreSQL version
+    environment:
+      POSTGRES_USER: projecthub
+      POSTGRES_PASSWORD: password123  # VULNERABLE: Hardcoded password
+      POSTGRES_DB: projecthub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # VULNERABLE: Exposed database port
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://projecthub:password123@db:5432/projecthub
+      JWT_SECRET: secret_key_12345  # VULNERABLE: Hardcoded secret
+      AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE  # VULNERABLE: Hardcoded credentials
+      AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../backend:/app
+      - uploads:/app/uploads
+      - logs:/app/logs
+    depends_on:
+      - db
+    networks:
+      - app-network
+    # VULNERABLE: Running as root
+    user: root
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:1.14  # VULNERABLE: Outdated Nginx version
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ../frontend/build:/usr/share/nginx/html
+    depends_on:
+      - frontend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  uploads:
+  logs:
+
+networks:
+  app-network:
+    driver: bridge
+
