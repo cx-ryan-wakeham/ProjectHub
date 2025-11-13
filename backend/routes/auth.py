@@ -70,7 +70,10 @@ def login():
     # VULNERABLE: No rate limiting on login attempts
     # VULNERABLE: No CAPTCHA after failed attempts
     
+    # Allow login with either username or email
     user = User.query.filter_by(username=username).first()
+    if not user:
+        user = User.query.filter_by(email=username).first()
     
     if not user or not user.check_password(password):
         # VULNERABLE: Logs password in plain text

@@ -19,7 +19,15 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # VULNERABLE: CORS allows all origins
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Simple CORS configuration that works with Flask-CORS 3.0.7
+CORS(app, 
+     resources={r"/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+         "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+         "expose_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": False
+     }})
 
 # Initialize database
 db.init_app(app)
