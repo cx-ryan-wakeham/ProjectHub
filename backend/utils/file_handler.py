@@ -6,7 +6,10 @@ from werkzeug.utils import secure_filename
 from config import Config
 import xml.etree.ElementTree as ET  # VULNERABLE: For XXE attacks
 import pickle  # VULNERABLE: For insecure deserialization
-import yaml  # VULNERABLE: For YAML deserialization
+try:
+    import yaml  # VULNERABLE: For YAML deserialization
+except ImportError:
+    yaml = None  # YAML optional - vulnerability still demonstrated in code
 
 def allowed_file(filename):
     """Check if file extension is allowed - VULNERABLE: Too permissive"""
@@ -98,6 +101,8 @@ def process_pickle_file(file_path):
 
 def process_yaml_file(file_path):
     """Process YAML file - VULNERABLE: Insecure deserialization"""
+    if yaml is None:
+        return {'error': 'YAML library not installed - vulnerability still exists in code'}
     try:
         # VULNERABLE: YAML deserialization can execute arbitrary code
         with open(file_path, 'r') as f:

@@ -1,0 +1,1587 @@
+openapi: 3.0.3
+info:
+  title: ProjectHub API
+  description: |
+    ProjectHub is a project management web application API.
+    
+    **⚠️ WARNING: This API is intentionally designed with security vulnerabilities for educational and security testing purposes only. DO NOT use in production environments.**
+    
+    This API demonstrates common security vulnerabilities including:
+    - SQL Injection
+    - Broken Authentication
+    - Sensitive Data Exposure
+    - Broken Access Control (IDOR)
+    - XSS vulnerabilities
+    - Insecure file uploads
+  version: 1.0.0
+  contact:
+    name: ProjectHub Security Demo
+    email: security-demo@projecthub.com
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: https://api.projecthub.demo
+    description: Demo server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Projects
+    description: Project management endpoints
+  - name: Tasks
+    description: Task management endpoints
+  - name: Documents
+    description: Document upload and management endpoints
+  - name: Messages
+    description: Messaging and communication endpoints
+  - name: Notifications
+    description: Notification endpoints
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account. No rate limiting or CAPTCHA protection.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive JWT token. No rate limiting or MFA.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                password:
+                  type: string
+                  format: password
+                  example: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Logout current user. Note: Tokens are stateless and never expire.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user information
+      description: Retrieve information about the currently authenticated user.
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects:
+    get:
+      tags:
+        - Projects
+      summary: List all projects
+      description: Get a list of all projects. Vulnerable to SQL injection in search parameter.
+      operationId: listProjects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          description: Search term for project name or description (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Projects
+      summary: Create a new project
+      description: Create a new project. No input validation or sanitization.
+      operationId: createProject
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: My New Project
+                description:
+                  type: string
+                  example: Project description
+                is_public:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{projectId}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by ID
+      description: Retrieve a specific project. Vulnerable to IDOR.
+      operationId: getProject
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Projects
+      summary: Update project
+      description: Update project details. Vulnerable to broken access control.
+      operationId: updateProject
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                is_public:
+                  type: boolean
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete project
+      description: Delete a project. Vulnerable to broken access control.
+      operationId: deleteProject
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List all tasks
+      description: Get a list of tasks. Vulnerable to SQL injection and broken access control.
+      operationId: listTasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: assigned_to
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Tasks
+      summary: Create a new task
+      description: Create a new task. No input validation or sanitization.
+      operationId: createTask
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - project_id
+              properties:
+                title:
+                  type: string
+                  example: Complete project documentation
+                description:
+                  type: string
+                  example: Task description
+                project_id:
+                  type: integer
+                assigned_to:
+                  type: integer
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                  default: medium
+                due_date:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{taskId}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task by ID
+      description: Retrieve a specific task. Vulnerable to IDOR.
+      operationId: getTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Tasks
+      summary: Update task
+      description: Update task details. Vulnerable to broken access control.
+      operationId: updateTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [pending, in_progress, completed]
+                assigned_to:
+                  type: integer
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                due_date:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Tasks
+      summary: Delete task
+      description: Delete a task. Vulnerable to broken access control.
+      operationId: deleteTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{taskId}/comments:
+    get:
+      tags:
+        - Tasks
+      summary: Get task comments
+      description: Get all comments for a task. Vulnerable to IDOR and XSS.
+      operationId: getTaskComments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Tasks
+      summary: Create task comment
+      description: Add a comment to a task. Vulnerable to XSS and IDOR.
+      operationId: createTaskComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: This is a comment
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  comment:
+                    $ref: '#/components/schemas/Comment'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: List all documents
+      description: Get a list of documents. Vulnerable to IDOR and broken access control.
+      operationId: listDocuments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Documents
+      summary: Upload document
+      description: Upload a document. Vulnerable to XXE, insecure file upload, and no validation.
+      operationId: uploadDocument
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                project_id:
+                  type: integer
+                is_public:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents/{documentId}:
+    get:
+      tags:
+        - Documents
+      summary: Get document by ID
+      description: Retrieve document information. Vulnerable to IDOR.
+      operationId: getDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Documents
+      summary: Delete document
+      description: Delete a document. Vulnerable to broken access control.
+      operationId: deleteDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents/{documentId}/download:
+    get:
+      tags:
+        - Documents
+      summary: Download document
+      description: Download a document file. Vulnerable to path traversal and IDOR.
+      operationId: downloadDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages:
+    get:
+      tags:
+        - Messages
+      summary: List messages
+      description: Get a list of messages. Vulnerable to IDOR and broken access control.
+      operationId: listMessages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sender_id
+          in: query
+          schema:
+            type: integer
+        - name: receiver_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Messages
+      summary: Send message
+      description: Send a message to another user. Vulnerable to XSS and no input validation.
+      operationId: sendMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - receiver_id
+                - content
+              properties:
+                receiver_id:
+                  type: integer
+                subject:
+                  type: string
+                  example: Message subject
+                content:
+                  type: string
+                  example: Message content
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  message_data:
+                    $ref: '#/components/schemas/Message'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/{messageId}:
+    get:
+      tags:
+        - Messages
+      summary: Get message by ID
+      description: Retrieve a specific message. Vulnerable to IDOR and XSS.
+      operationId: getMessage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: '#/components/schemas/Message'
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Messages
+      summary: Delete message
+      description: Delete a message. Vulnerable to broken access control.
+      operationId: deleteMessage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/notifications:
+    get:
+      tags:
+        - Messages
+      summary: Get notifications
+      description: Get user notifications. Vulnerable to XSS in notification messages.
+      operationId: getNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: is_read
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/notifications/{notificationId}/read:
+    post:
+      tags:
+        - Messages
+      summary: Mark notification as read
+      description: Mark a notification as read. Vulnerable to IDOR.
+      operationId: markNotificationRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: List notifications
+      description: Get user notifications. Vulnerable to XSS in notification messages.
+      operationId: listNotifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: is_read
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/{notificationId}:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification by ID
+      description: Retrieve a specific notification. Vulnerable to IDOR and XSS.
+      operationId: getNotification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notification:
+                    $ref: '#/components/schemas/Notification'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/projects:
+    get:
+      tags:
+        - Projects
+      summary: List all projects (v1 API)
+      description: Get a list of all projects. No authentication required. Vulnerable to SQL injection.
+      operationId: listProjectsV1
+      parameters:
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+
+  /v1/projects/{projectId}:
+    get:
+      tags:
+        - Projects
+      summary: Get project by ID (v1 API)
+      description: Retrieve a specific project. No authentication required. Vulnerable to IDOR.
+      operationId: getProjectV1
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/projects/{projectId}/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: Get project tasks (v1 API)
+      description: Get tasks for a project. No authentication required. Vulnerable to SQL injection and IDOR.
+      operationId: getProjectTasksV1
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+
+  /v1/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List all tasks (v1 API)
+      description: Get a list of tasks. No authentication required. Vulnerable to SQL injection.
+      operationId: listTasksV1
+      parameters:
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+        - name: assigned_to
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+
+  /v1/tasks/{taskId}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task by ID (v1 API)
+      description: Retrieve a specific task. No authentication required. Vulnerable to IDOR.
+      operationId: getTaskV1
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/tasks/{taskId}/comments:
+    get:
+      tags:
+        - Tasks
+      summary: Get task comments (v1 API)
+      description: Get all comments for a task. No authentication required. Vulnerable to IDOR and XSS.
+      operationId: getTaskCommentsV1
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+
+  /v1/documents:
+    get:
+      tags:
+        - Documents
+      summary: List all documents (v1 API)
+      description: Get a list of documents. No authentication required. Vulnerable to IDOR.
+      operationId: listDocumentsV1
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+
+  /v1/documents/{documentId}:
+    get:
+      tags:
+        - Documents
+      summary: Get document by ID (v1 API)
+      description: Retrieve document information. No authentication required. Vulnerable to IDOR.
+      operationId: getDocumentV1
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/messages:
+    get:
+      tags:
+        - Messages
+      summary: List all messages (v1 API)
+      description: Get a list of messages. No authentication required. Vulnerable to IDOR and XSS.
+      operationId: listMessagesV1
+      parameters:
+        - name: sender_id
+          in: query
+          schema:
+            type: integer
+        - name: receiver_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+
+  /v1/messages/{messageId}:
+    get:
+      tags:
+        - Messages
+      summary: Get message by ID (v1 API)
+      description: Retrieve a specific message. No authentication required. Vulnerable to IDOR and XSS.
+      operationId: getMessageV1
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Message details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: '#/components/schemas/Message'
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication. Tokens never expire.
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password_hash:
+          type: string
+          description: Should not be exposed in production
+        role:
+          type: string
+          enum: [admin, project_manager, team_member]
+        api_key:
+          type: string
+          description: Should not be exposed in production
+        created_at:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        owner_id:
+          type: integer
+        is_public:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        project_id:
+          type: integer
+        assigned_to:
+          type: integer
+          nullable: true
+        created_by:
+          type: integer
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        task_id:
+          type: integer
+        user_id:
+          type: integer
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+        filename:
+          type: string
+        original_filename:
+          type: string
+        file_size:
+          type: integer
+        file_type:
+          type: string
+        project_id:
+          type: integer
+          nullable: true
+        uploaded_by:
+          type: integer
+        is_public:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        sender_id:
+          type: integer
+        receiver_id:
+          type: integer
+        subject:
+          type: string
+          nullable: true
+        content:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        message:
+          type: string
+        type:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+

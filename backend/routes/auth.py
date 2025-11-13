@@ -1,5 +1,8 @@
 # Authentication routes with intentional security vulnerabilities
 from flask import Blueprint, request, jsonify, session
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import User, db
 from auth import generate_token, get_current_user
 from config import Config

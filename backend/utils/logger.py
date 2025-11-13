@@ -12,9 +12,21 @@ def setup_logger(app):
     logger = logging.getLogger('projecthub')
     logger.setLevel(getattr(logging, Config.LOG_LEVEL))
     
-    # File handler
-    file_handler = logging.FileHandler(Config.LOG_FILE)
-    file_handler.setLevel(logging.DEBUG)
+    # File handler - create directory if it doesn't exist
+    import os
+    log_dir = os.path.dirname(Config.LOG_FILE)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    
+    try:
+        file_handler = logging.FileHandler(Config.LOG_FILE)
+        file_handler.setLevel(logging.DEBUG)
+    except (FileNotFoundError, OSError):
+        # Fallback to relative path if absolute path fails (e.g., on Windows)
+        log_file = os.path.join('logs', 'app.log')
+        os.makedirs('logs', exist_ok=True)
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.DEBUG)
     
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)

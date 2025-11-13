@@ -1,5 +1,8 @@
 # Messaging routes with intentional security vulnerabilities (XSS)
 from flask import Blueprint, request, jsonify
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Message, Notification, User, db
 from auth import require_auth, get_current_user
 from utils.logger import log_user_action

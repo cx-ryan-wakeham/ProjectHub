@@ -1,10 +1,15 @@
 # Main Flask application with intentional security vulnerabilities
+import sys
+import os
+
+# Add current directory to Python path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from config import Config
 from models import db
 from database import init_db
-import os
 
 # Import route handlers
 from routes import auth, projects, tasks, documents, messages, api
