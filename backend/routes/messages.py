@@ -29,11 +29,28 @@ def get_messages():
         query = query.filter_by(receiver_id=receiver_id)
     
     # VULNERABLE: Should filter by current user, but allows seeing all messages
-    messages = query.all()
+    # Order by most recent first
+    messages = query.order_by(Message.created_at.desc()).all()
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    
+    # Calculate pagination
+    total = len(messages)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_messages = messages[start:end]
     
     # VULNERABLE: XSS in content - no sanitization
     return jsonify({
-        'messages': [m.to_dict() for m in messages]
+        'messages': [m.to_dict() for m in paginated_messages],
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': (total + per_page - 1) // per_page
+        }
     })
 
 @bp.route('/<int:message_id>', methods=['GET'])
