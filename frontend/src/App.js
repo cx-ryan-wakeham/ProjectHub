@@ -62,7 +62,7 @@ function App() {
               {user.role === 'admin' && (
                 <Link to="/users">User Management</Link>
               )}
-              <span style={{ color: 'white', margin: '0 1rem' }}>Welcome, {user.username}</span>
+              <span style={{ color: 'white', padding: '0.5rem 1rem' }}>Welcome, {user.username}</span>
               <button className="button" onClick={handleLogout}>Logout</button>
             </nav>
           </header>

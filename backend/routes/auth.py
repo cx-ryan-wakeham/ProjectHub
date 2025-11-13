@@ -7,6 +7,7 @@ from models import User, db
 from auth import generate_token, get_current_user
 from config import Config
 from utils.logger import log_login_attempt, log_user_action
+from sqlalchemy import func
 import hashlib
 
 bp = Blueprint('auth', __name__)
@@ -70,10 +71,10 @@ def login():
     # VULNERABLE: No rate limiting on login attempts
     # VULNERABLE: No CAPTCHA after failed attempts
     
-    # Allow login with either username or email
-    user = User.query.filter_by(username=username).first()
+    # Allow login with either username or email (case-insensitive)
+    user = User.query.filter(func.lower(User.username) == func.lower(username)).first()
     if not user:
-        user = User.query.filter_by(email=username).first()
+        user = User.query.filter(func.lower(User.email) == func.lower(username)).first()
     
     if not user or not user.check_password(password):
         # VULNERABLE: Logs password in plain text

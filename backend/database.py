@@ -26,8 +26,10 @@ def seed_data(app):
             return
         
         try:
-            # Get admin user
-            admin = User.query.filter_by(username='admin').first()
+            # Get admin user (check both 'admin' and 'Admin' for backward compatibility)
+            admin = User.query.filter_by(username='Admin').first()
+            if not admin:
+                admin = User.query.filter_by(username='admin').first()
             if not admin:
                 print("Warning: Admin user not found, cannot seed data")
                 return
@@ -35,11 +37,11 @@ def seed_data(app):
             # Create additional test users
             test_users = []
             user_data = [
-            {'username': 'alice', 'email': 'alice@projecthub.com', 'role': 'project_manager'},
-            {'username': 'bob', 'email': 'bob@projecthub.com', 'role': 'team_member'},
-            {'username': 'charlie', 'email': 'charlie@projecthub.com', 'role': 'team_member'},
-            {'username': 'diana', 'email': 'diana@projecthub.com', 'role': 'team_member'},
-            {'username': 'eve', 'email': 'eve@projecthub.com', 'role': 'project_manager'},
+            {'username': 'Alice', 'email': 'alice@projecthub.com', 'role': 'project_manager'},
+            {'username': 'Bob', 'email': 'bob@projecthub.com', 'role': 'team_member'},
+            {'username': 'Charlie', 'email': 'charlie@projecthub.com', 'role': 'team_member'},
+            {'username': 'Diana', 'email': 'diana@projecthub.com', 'role': 'team_member'},
+            {'username': 'Eve', 'email': 'eve@projecthub.com', 'role': 'project_manager'},
             ]
             
             for user_info in user_data:
@@ -321,10 +323,13 @@ def init_db(app):
         db.create_all()
         
         # Create default admin user if it doesn't exist
-        admin = User.query.filter_by(username='admin').first()
+        # Check both 'Admin' and 'admin' for backward compatibility
+        admin = User.query.filter_by(username='Admin').first()
+        if not admin:
+            admin = User.query.filter_by(username='admin').first()
         if not admin:
             admin = User(
-                username='admin',
+                username='Admin',
                 email=Config.ADMIN_EMAIL,
                 role='admin'
             )
