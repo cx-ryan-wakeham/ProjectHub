@@ -1,5 +1,6 @@
 # Frontend Dockerfile with intentional security vulnerabilities
-FROM node:10  # VULNERABLE: Outdated Node.js version
+# VULNERABLE: Outdated Node.js version
+FROM node:10
 
 WORKDIR /app
 

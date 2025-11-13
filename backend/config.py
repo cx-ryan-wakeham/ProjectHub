@@ -9,6 +9,8 @@ class Config:
     
     # Hardcoded database credentials - VULNERABLE
     DATABASE_URL = os.environ.get('DATABASE_URL') or "postgresql://projecthub:password123@localhost:5432/projecthub"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or "postgresql://projecthub:password123@localhost:5432/projecthub"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Hardcoded API keys - VULNERABLE
     AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"

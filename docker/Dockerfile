@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     postgresql-client \
+    libpq-dev \
+    netcat \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -28,8 +30,9 @@ WORKDIR /app
 # Copy requirements
 COPY backend/requirements.txt .
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Upgrade pip and install Python dependencies
+RUN pip3 install --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY backend/ .
@@ -39,6 +42,10 @@ RUN mkdir -p /app/uploads /app/logs && \
     chmod 777 /app/uploads && \
     chmod 777 /app/logs
 
+# Copy and setup entrypoint
+COPY backend/docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
 # VULNERABLE: Running as root
-CMD ["python3", "app.py"]
+CMD ["/app/docker-entrypoint.sh"]
 
