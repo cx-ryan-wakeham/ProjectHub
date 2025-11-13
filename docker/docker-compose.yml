@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:10  # VULNERABLE: Outdated PostgreSQL version
@@ -20,6 +18,7 @@ services:
       dockerfile: docker/Dockerfile
     environment:
       DATABASE_URL: postgresql://projecthub:password123@db:5432/projecthub
+      DB_HOST: db
       JWT_SECRET: secret_key_12345  # VULNERABLE: Hardcoded secret
       AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE  # VULNERABLE: Hardcoded credentials
       AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
@@ -31,6 +30,8 @@ services:
       - logs:/app/logs
     depends_on:
       - db
+    links:
+      - db:db
     networks:
       - app-network
     # VULNERABLE: Running as root

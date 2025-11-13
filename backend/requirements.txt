@@ -6,7 +6,7 @@ Flask==1.1.4  # Updated for Python 3.13 compatibility (still outdated with known
 Flask-SQLAlchemy==2.5.1  # Updated for Python 3.13 compatibility (still outdated)
 Flask-CORS==3.0.10  # Updated for Python 3.13 compatibility (still outdated)
 Flask-JWT-Extended==3.13.1
-psycopg2-binary==2.9.10  # Updated for Python 3.13 compatibility
+psycopg2-binary==2.9.8  # Updated for Python 3.6 compatibility
 PyJWT==1.7.1  # Updated for Python 3.13 compatibility (still outdated)
 Werkzeug==0.16.1  # Updated for Python 3.13 compatibility (still outdated with known CVEs)
 python-dotenv==0.10.0
