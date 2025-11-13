@@ -1,17 +1,18 @@
 # Outdated and vulnerable dependencies for security testing demonstration
 # WARNING: These versions contain known CVEs
+# Note: Some versions updated for Python 3.13 compatibility while maintaining outdated status
 
-Flask==1.0.0
-Flask-SQLAlchemy==2.3.2
-Flask-CORS==3.0.7
+Flask==1.1.4  # Updated for Python 3.13 compatibility (still outdated with known CVEs)
+Flask-SQLAlchemy==2.5.1  # Updated for Python 3.13 compatibility (still outdated)
+Flask-CORS==3.0.10  # Updated for Python 3.13 compatibility (still outdated)
 Flask-JWT-Extended==3.13.1
-psycopg2-binary==2.7.4
-PyJWT==1.6.4
-Werkzeug==0.14.1
+psycopg2-binary==2.9.10  # Updated for Python 3.13 compatibility
+PyJWT==1.7.1  # Updated for Python 3.13 compatibility (still outdated)
+Werkzeug==0.16.1  # Updated for Python 3.13 compatibility (still outdated with known CVEs)
 python-dotenv==0.10.0
 requests==2.20.0
-lxml==4.2.5
-Pillow==5.2.0
-python-magic==0.4.15
-PyYAML==3.13
+# lxml==4.2.5  # Commented out - requires build tools. XXE vulnerability still demonstrated using xml.etree.ElementTree
+# Pillow==10.0.0  # Commented out - requires build tools on Windows/Python 3.13
+# python-magic==0.4.27  # Commented out - optional for file type detection
+# PyYAML==5.4.1  # Commented out - requires build tools. YAML deserialization vulnerability still demonstrated in code
 

@@ -1,5 +1,8 @@
 # RESTful API endpoints with intentional security vulnerabilities
 from flask import Blueprint, request, jsonify
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import User, Project, Task, Document, Message, Comment, Notification, db
 from auth import get_current_user, require_auth
 from utils.logger import log_api_request, log_user_action

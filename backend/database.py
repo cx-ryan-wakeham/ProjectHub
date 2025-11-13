@@ -1,5 +1,4 @@
 # Database initialization and connection setup
-from flask_sqlalchemy import SQLAlchemy
 from models import db, User, Project, Task, Document, Message, Comment, Notification
 from config import Config
 import hashlib
