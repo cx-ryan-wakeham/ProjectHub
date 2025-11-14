@@ -2,7 +2,7 @@
 import logging
 import sys
 from config import Config
-from utils.request_context import request_id, get_request_context, get_request_duration
+from utils.request_context import _get_request_id, get_request_context, get_request_duration
 
 def setup_logger(app):
     """Setup logging"""
@@ -50,7 +50,7 @@ def log_user_action(user_id, action, details=None):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
+    req_id = _get_request_id() or "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""
     
@@ -65,7 +65,7 @@ def log_login_attempt(username, password, success=False):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
+    req_id = _get_request_id() or "N/A"
     ctx = get_request_context()
     ip_address = ctx.request.remote_addr if ctx and hasattr(ctx, 'request') and ctx.request else "unknown"
     
@@ -77,7 +77,7 @@ def log_api_request(user_id, endpoint, request_data):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
+    req_id = _get_request_id() or "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""
     

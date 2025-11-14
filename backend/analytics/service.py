@@ -1,5 +1,6 @@
 from sqlalchemy import select, func
-from models import db, Task, Project, User, Comment, Message
+from db_ext import db
+from models import Task, Project, User, Comment, Message
 from datetime import datetime, timedelta
 import pandas as pd
 
@@ -12,7 +13,7 @@ class AnalyticsService:
         result = db.session.execute(stmt).fetchall()
         
         df = pd.DataFrame.from_records(
-            [(row.status, row.count) for row in result],
+            [(row[0], row[1]) for row in result],
             columns=['status', 'count']
         )
         return df.to_dict(orient='records')
@@ -33,10 +34,10 @@ class AnalyticsService:
         
         records = []
         for row in result:
-            if row.created_at and row.updated_at:
-                delta = row.updated_at - row.created_at
+            if row[1] and row[2]:  # created_at and updated_at
+                delta = row[2] - row[1]
                 records.append({
-                    'task_id': row.id,
+                    'task_id': row[0],
                     'days_to_complete': delta.total_seconds() / 86400
                 })
         
@@ -63,9 +64,9 @@ class AnalyticsService:
         
         records = [
             {
-                'project_id': row.id,
-                'project_name': row.name,
-                'task_count': row.task_count
+                'project_id': row[0],
+                'project_name': row[1],
+                'task_count': row[2]
             }
             for row in result
         ]
@@ -93,7 +94,7 @@ class AnalyticsService:
         result = db.session.execute(stmt).fetchall()
         
         df = pd.DataFrame.from_records(
-            [(row.status, row.count) for row in result],
+            [(row[0], row[1]) for row in result],
             columns=['status', 'count']
         )
         
@@ -125,9 +126,9 @@ class AnalyticsService:
         
         records = [
             {
-                'priority': row.priority,
-                'count': row.count,
-                'avg_completion_days': round(row.avg_days, 2) if row.avg_days else 0
+                'priority': row[0],
+                'count': row[1],
+                'avg_completion_days': round(row[2], 2) if row[2] else 0
             }
             for row in result
         ]
@@ -189,8 +190,8 @@ class AnalyticsService:
         
         records = [
             {
-                'date': row.date.strftime('%Y-%m-%d') if row.date else None,
-                'message_count': row.count
+                'date': row[0].strftime('%Y-%m-%d') if row[0] else None,
+                'message_count': row[1]
             }
             for row in result
         ]

@@ -7,7 +7,7 @@ from db_ext import db
 from models import User, Project, Task, Document, Message, Comment
 from auth import get_current_user, require_auth
 from utils.logger import log_api_request, log_user_action
-from utils.request_context import get_request_context, get_request_metadata, request_id
+from utils.request_context import get_request_context, get_request_metadata, _get_request_id
 from utils.query_helpers import QueryHelper
 from utils.datetime_utils import get_utc_now
 from sqlalchemy import text
@@ -20,7 +20,7 @@ def get_users():
     """Get all users"""
     # Access request context
     ctx = get_request_context()
-    req_id = request_id if request_id else 'N/A'
+    req_id = _get_request_id() or 'N/A'
     ip_address = get_request_metadata('ip_address', 'unknown')
     
     search = request.args.get('search', '')
@@ -327,7 +327,7 @@ def get_stats():
         'total_documents': query_helper.count_documents(),
         'total_messages': query_helper.count_messages(),
         'generated_at': stats_time.isoformat(),
-        'request_id': request_id if request_id else 'N/A'
+        'request_id': _get_request_id() or 'N/A'
     }
     
     return jsonify(stats)

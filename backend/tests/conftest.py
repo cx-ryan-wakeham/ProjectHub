@@ -2,12 +2,17 @@ import pytest
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add backend directory to path
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
-from app import app as flask_app
 from db_ext import db
 from models import User, Project, Task, Message, Comment
 from datetime import datetime, timedelta
+
+# Import app after setting up path
+from app import app as flask_app
 
 
 @pytest.fixture

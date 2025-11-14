@@ -1,7 +1,11 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import jsonify, request
-from analytics import bp
-from analytics.service import AnalyticsService
 from auth import require_auth
+from analytics.service import AnalyticsService
+from analytics import bp
 
 
 @bp.route('/tasks/by-status', methods=['GET'])

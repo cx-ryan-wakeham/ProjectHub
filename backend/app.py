@@ -74,6 +74,7 @@ app.register_blueprint(api.bp, url_prefix='/api/v1')
 
 # Register analytics routes
 from analytics import bp as analytics_bp
+from analytics import routes as analytics_routes
 app.register_blueprint(analytics_bp)
 
 # Create upload directory
