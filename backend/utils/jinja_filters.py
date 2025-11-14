@@ -1,12 +1,11 @@
-# Jinja2 template filters using deprecated contextfilter decorator
-# These will break when upgrading to Jinja2 3.0+ (contextfilter replaced with pass_context)
+# Jinja2 template filters
 from jinja2 import contextfilter
 from datetime import datetime
 import hashlib
 
 @contextfilter
 def format_datetime(context, value, format='%Y-%m-%d %H:%M:%S'):
-    """Format datetime using deprecated contextfilter decorator"""
+    """Format datetime"""
     if value is None:
         return ''
     if isinstance(value, str):
@@ -41,7 +40,7 @@ def md5_hash(context, value):
 
 @contextfilter
 def request_id_filter(context):
-    """Get request ID from context using deprecated pattern"""
+    """Get request ID from context"""
     from utils.request_context import get_request_context
     ctx = get_request_context()
     if ctx and hasattr(ctx, 'request_id'):

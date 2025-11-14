@@ -7,6 +7,8 @@ from models import User, Project, Task, Document, Message, Comment, db
 from auth import get_current_user, require_auth
 from utils.logger import log_api_request, log_user_action
 from utils.request_context import get_request_context, get_request_metadata, request_id
+from utils.query_helpers import QueryHelper
+from utils.datetime_utils import get_utc_now
 from sqlalchemy import text
 
 bp = Blueprint('api', __name__)
@@ -15,7 +17,7 @@ bp = Blueprint('api', __name__)
 @bp.route('/users', methods=['GET'])
 def get_users():
     """Get all users"""
-    # Using deprecated _request_ctx_stack pattern to access request context
+    # Access request context
     ctx = get_request_context()
     req_id = request_id if request_id else 'N/A'
     ip_address = get_request_metadata('ip_address', 'unknown')
@@ -32,7 +34,7 @@ def get_users():
         # Convert User objects to dictionaries
         users = [u.to_dict() for u in users]
     
-    # Log using deprecated request context
+    # Log API request
     log_api_request(None, '/api/v1/users', {'search': search, 'ip': ip_address})
     
     return jsonify({
@@ -314,12 +316,17 @@ def get_message_api(message_id):
 @bp.route('/stats', methods=['GET'])
 def get_stats():
     """Get application statistics"""
+    query_helper = QueryHelper()
+    stats_time = get_utc_now()
+    
     stats = {
-        'total_users': User.query.count(),
-        'total_projects': Project.query.count(),
-        'total_tasks': Task.query.count(),
-        'total_documents': Document.query.count(),
-        'total_messages': Message.query.count(),
+        'total_users': query_helper.count_users(),
+        'total_projects': query_helper.count_projects(),
+        'total_tasks': query_helper.count_tasks(),
+        'total_documents': query_helper.count_documents(),
+        'total_messages': query_helper.count_messages(),
+        'generated_at': stats_time.isoformat(),
+        'request_id': request_id if request_id else 'N/A'
     }
     
     return jsonify(stats)

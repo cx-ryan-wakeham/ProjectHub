@@ -49,7 +49,7 @@ def log_user_action(user_id, action, details=None):
     """Log user actions"""
     logger = logging.getLogger('projecthub')
     
-    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    # Get request ID
     req_id = request_id if request_id else "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""
@@ -64,7 +64,7 @@ def log_login_attempt(username, password, success=False):
     """Log login attempts"""
     logger = logging.getLogger('projecthub')
     
-    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    # Get request ID
     req_id = request_id if request_id else "N/A"
     ctx = get_request_context()
     ip_address = ctx.request.remote_addr if ctx and hasattr(ctx, 'request') and ctx.request else "unknown"
@@ -76,7 +76,7 @@ def log_api_request(user_id, endpoint, request_data):
     """Log API requests"""
     logger = logging.getLogger('projecthub')
     
-    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    # Get request ID
     req_id = request_id if request_id else "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""

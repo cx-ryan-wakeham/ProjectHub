@@ -4,26 +4,45 @@
 
 ProjectHub is a project management web application that demonstrates common security vulnerabilities found in real-world applications, including all OWASP Top 10 vulnerabilities and additional security flaws.
 
+## Features
+
+- **User Management**: Registration, authentication, role-based access control (admin, project_manager, team_member)
+- **Project Management**: Create, update, delete projects with descriptions and status tracking
+- **Task Management**: Assign tasks to users, track status, add comments
+- **Document Management**: Upload documents with metadata extraction (supports XML, YAML, Pickle, images)
+- **Messaging**: Send and receive messages between users
+- **Analytics**: Application statistics and search functionality
+- **Admin Dashboard**: HTML-based admin interface for viewing system data
+- **Request Tracking**: Request ID generation and logging for all API calls
+- **Error Handling**: Custom error pages with request tracking
+
 ## Overview
 
 ProjectHub is designed to help security professionals, developers, and students understand and test for common security vulnerabilities. The application includes:
 
-- User authentication and authorization
-- Project and task management
-- Document upload and sharing
-- Messaging system
-- User management (admin)
+- User authentication and authorization (JWT-based)
+- Project and task management with comments
+- Document upload and sharing with metadata extraction
+- Messaging system between users
+- User management (admin functionality)
+- Analytics and reporting endpoints
+- Admin dashboard (HTML interface)
 - RESTful API endpoints
+- Request tracking and logging
 - Docker containerization
 - AWS infrastructure as code (Terraform)
 - CI/CD pipeline (GitHub Actions)
 
 ## Technology Stack
 
-- **Backend**: Flask 1.0.0
+- **Backend**: Flask 1.1.4
 - **Frontend**: React 16.8.6
-- **Database**: PostgreSQL
-- **Containerization**: Docker
+- **Database**: PostgreSQL 10
+- **ORM**: SQLAlchemy (via Flask-SQLAlchemy 2.3.2)
+- **Authentication**: JWT (PyJWT 1.6.4, Flask-JWT-Extended 3.13.1)
+- **Templates**: Jinja2 2.11.3
+- **Containerization**: Docker & Docker Compose
+- **Web Server**: Nginx 1.14
 - **Infrastructure**: Terraform (AWS)
 - **CI/CD**: GitHub Actions
 
@@ -118,6 +137,8 @@ docker-compose -f docker/docker-compose.yml up -d --build
 4. Access the application:
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
+- **Admin Dashboard**: http://localhost:5000/admin
+- **API Health Check**: http://localhost:5000/api/health
 - **Nginx (Production)**: http://localhost:80
 - **Database**: localhost:5432
 
@@ -141,14 +162,14 @@ To skip seeding, set the environment variable `SKIP_SEED=true` in the backend se
 ### Default Credentials
 
 **Application Users** (seeded automatically):
-- **Admin**: admin@projecthub.com / Admin (password is same as username, capitalized)
-- **Alice**: alice@projecthub.com / Alice (project_manager)
-- **Bob**: bob@projecthub.com / Bob (team_member)
-- **Charlie**: charlie@projecthub.com / Charlie (team_member)
-- **Diana**: diana@projecthub.com / Diana (team_member)
-- **Eve**: eve@projecthub.com / Eve (project_manager)
+- **Admin**: admin@projecthub.com / Admin (admin role) - password: `Admin`
+- **Alice**: alice@projecthub.com / Alice (project_manager role) - password: `Alice`
+- **Bob**: bob@projecthub.com / Bob (team_member role) - password: `Bob`
+- **Charlie**: charlie@projecthub.com / Charlie (team_member role) - password: `Charlie`
+- **Diana**: diana@projecthub.com / Diana (team_member role) - password: `Diana`
+- **Eve**: eve@projecthub.com / Eve (project_manager role) - password: `Eve`
 
-**Note**: Login is case-insensitive (you can use `admin`, `Admin`, or `ADMIN`), but passwords match the capitalized username.
+**Note**: Login accepts either username or email (case-insensitive). Passwords match the capitalized username (e.g., username "Alice" has password "Alice").
 
 **Database**:
 - **User**: projecthub
@@ -165,17 +186,30 @@ ProjectHub/
 │   ├── database.py     # Database initialization and seeding
 │   ├── auth.py         # Authentication logic
 │   ├── config.py       # Configuration (with hardcoded secrets)
+│   ├── requirements.txt # Python dependencies
 │   ├── docker-entrypoint.sh  # Container startup script
 │   ├── routes/         # Route handlers
+│   │   ├── __init__.py
 │   │   ├── api.py      # General API routes (includes user management)
-│   │   ├── auth.py      # Authentication routes
+│   │   ├── auth.py     # Authentication routes
 │   │   ├── projects.py # Project management routes
 │   │   ├── tasks.py    # Task management routes
 │   │   ├── documents.py # Document management routes
-│   │   └── messages.py  # Messaging routes
-│   └── utils/          # Utility modules
-│       ├── logger.py   # Logging configuration
-│       └── file_handler.py # File handling utilities
+│   │   ├── messages.py  # Messaging routes
+│   │   └── analytics.py # Analytics and reporting routes
+│   ├── utils/          # Utility modules
+│   │   ├── __init__.py
+│   │   ├── logger.py   # Logging configuration
+│   │   ├── file_handler.py # File handling utilities
+│   │   ├── request_context.py # Request context management
+│   │   ├── query_helpers.py # Database query helpers
+│   │   ├── datetime_utils.py # Datetime utilities
+│   │   └── jinja_filters.py # Jinja2 template filters
+│   ├── templates/      # HTML templates
+│   │   ├── error.html  # Error pages
+│   │   └── admin.html  # Admin dashboard
+│   ├── uploads/        # Uploaded files directory
+│   └── logs/           # Application logs directory
 ├── frontend/           # React frontend application
 │   ├── src/
 │   │   ├── components/  # React components
@@ -189,9 +223,12 @@ ProjectHub/
 │   │   ├── services/     # API client
 │   │   │   └── api.js
 │   │   ├── App.js       # Main React component
-│   │   └── index.js     # Entry point
+│   │   ├── index.js     # Entry point
+│   │   └── index.css    # Global styles
+│   ├── public/
+│   │   └── index.html   # HTML template
 │   ├── Dockerfile      # Frontend Dockerfile
-│   └── package.json
+│   └── package.json    # Node.js dependencies
 ├── docker/             # Docker configuration
 │   ├── Dockerfile      # Backend Dockerfile
 │   ├── docker-compose.yml # Service orchestration
@@ -202,9 +239,14 @@ ProjectHub/
 │   ├── iam.tf          # IAM roles and policies
 │   ├── variables.tf   # Terraform variables
 │   └── outputs.tf     # Terraform outputs
-└── .github/
-    └── workflows/
-        └── ci.yml      # GitHub Actions CI/CD
+├── .github/
+│   └── workflows/
+│       └── ci.yml      # GitHub Actions CI/CD
+├── README.md          # This file
+├── QUICKSTART.md      # Quick start guide
+├── LICENSE            # License file
+├── openapi.yaml       # OpenAPI specification
+└── get-docker.sh      # Docker installation helper script
 ```
 
 ## Security Vulnerabilities
@@ -226,6 +268,80 @@ The application includes vulnerabilities across all OWASP Top 10 categories:
 - **Insufficient logging and monitoring** (log injection, sensitive data in logs)
 - **Additional security weaknesses** (hardcoded secrets, insecure file uploads, path traversal, no CSRF protection, weak password hashing)
 
+## Breaking Changes on Dependency Upgrades
+
+This application uses older patterns and APIs that will break when upgrading dependencies. The following table summarizes the breaking changes:
+
+| Pattern | Breaking Version | Files Affected | Instances | Migration Complexity |
+|---------|------------------|----------------|-----------|---------------------|
+| `Model.query` (SQLAlchemy) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
+| `datetime.utcnow()` (Python) | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
+| `_request_ctx_stack` (Flask) | Flask 2.0+ | 4+ files | 10+ | **MEDIUM** - Replace with `g` object |
+| `@contextfilter` (Jinja2) | Jinja2 3.0+ | 2 files | 7 filters | **MEDIUM** - Replace with `@pass_context` |
+| `yaml.load()` without Loader (PyYAML) | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
+
+**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing.
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user info
+- `POST /api/auth/reset-password` - Password reset
+
+### Projects
+- `GET /api/projects` - List all projects (with search)
+- `GET /api/projects/<id>` - Get project details
+- `POST /api/projects` - Create project
+- `PUT /api/projects/<id>` - Update project
+- `DELETE /api/projects/<id>` - Delete project
+- `GET /api/projects/<id>/tasks` - Get project tasks
+
+### Tasks
+- `GET /api/tasks` - List all tasks (with filters)
+- `GET /api/tasks/<id>` - Get task details
+- `POST /api/tasks` - Create task
+- `PUT /api/tasks/<id>` - Update task
+- `DELETE /api/tasks/<id>` - Delete task
+- `GET /api/tasks/<id>/comments` - Get task comments
+- `POST /api/tasks/<id>/comments` - Add comment to task
+
+### Documents
+- `GET /api/documents` - List all documents
+- `GET /api/documents/<id>` - Get document details
+- `POST /api/documents` - Upload document
+- `PUT /api/documents/<id>` - Update document
+- `DELETE /api/documents/<id>` - Delete document
+- `GET /api/documents/<id>/download` - Download document
+
+### Messages
+- `GET /api/messages` - List messages (sent/received)
+- `GET /api/messages/<id>` - Get message details
+- `POST /api/messages` - Send message
+- `DELETE /api/messages/<id>` - Delete message
+- `GET /api/messages/search` - Search messages
+
+### Analytics
+- `GET /api/analytics/stats` - Get application statistics
+- `GET /api/analytics/search` - Search across users and projects
+- `GET /api/analytics/user/<id>` - Get user analytics
+
+### General API
+- `GET /api/v1/users` - List all users (with search)
+- `GET /api/v1/users/<id>` - Get user details
+- `POST /api/v1/users` - Create user
+- `PUT /api/v1/users/<id>` - Update user
+- `DELETE /api/v1/users/<id>` - Delete user
+- `GET /api/v1/stats` - Get statistics
+- `GET /api/v1/search` - Global search
+
+### Other
+- `GET /` - API information
+- `GET /api/health` - Health check
+- `GET /admin` - Admin dashboard (HTML)
+
 ## Testing the Vulnerabilities
 
 ### SQL Injection
@@ -233,6 +349,11 @@ The application includes vulnerabilities across all OWASP Top 10 categories:
 Try searching for projects with:
 ```
 ' OR '1'='1
+```
+
+Or in the users endpoint:
+```
+GET /api/v1/users?search=' OR '1'='1
 ```
 
 ### XSS
@@ -246,12 +367,14 @@ Try adding a comment with:
 
 Access other users' resources by modifying URL parameters:
 ```
-/api/tasks/1  (try different IDs)
+GET /api/tasks/1  (try different IDs)
+GET /api/documents/1
+GET /api/messages/1
 ```
 
 ### Broken Authentication
 
-JWT tokens never expire and use a weak secret. Try decoding tokens at jwt.io.
+JWT tokens never expire and use a weak secret. Try decoding tokens at jwt.io. Tokens are stored in localStorage and can be accessed via browser console.
 
 ## Development
 

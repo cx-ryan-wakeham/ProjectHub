@@ -37,7 +37,7 @@ init_db(app)
 # Setup logging
 logger = setup_logger(app)
 
-# Register Jinja2 filters using deprecated contextfilter pattern
+# Register Jinja2 template filters
 app.jinja_env.filters['format_datetime'] = format_datetime
 app.jinja_env.filters['user_display_name'] = user_display_name
 app.jinja_env.filters['truncate'] = truncate
@@ -46,14 +46,14 @@ app.jinja_env.filters['request_id_filter'] = request_id_filter
 app.jinja_env.filters['format_file_size'] = format_file_size
 app.jinja_env.filters['role_badge'] = role_badge
 
-# Initialize request context using deprecated _request_ctx_stack pattern
+# Initialize request context
 @app.before_request
 def init_request_context():
-    """Initialize request context using deprecated _request_ctx_stack"""
+    """Initialize request context"""
     from flask import _request_ctx_stack
     ctx = _request_ctx_stack.top
     if ctx is not None:
-        # Initialize request ID using deprecated pattern
+        # Initialize request ID
         _get_request_id()
         # Set request start time
         get_request_start_time()
@@ -70,6 +70,10 @@ app.register_blueprint(tasks.bp, url_prefix='/api/tasks')
 app.register_blueprint(documents.bp, url_prefix='/api/documents')
 app.register_blueprint(messages.bp, url_prefix='/api/messages')
 app.register_blueprint(api.bp, url_prefix='/api/v1')
+
+# Register analytics routes
+from routes import analytics
+app.register_blueprint(analytics.bp, url_prefix='/api')
 
 # Create upload directory
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
@@ -89,7 +93,7 @@ def health():
 
 @app.errorhandler(404)
 def not_found(error):
-    """404 error handler using Jinja2 template with deprecated filters"""
+    """404 error handler"""
     from utils.request_context import get_request_context
     ctx = get_request_context()
     request_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
@@ -105,7 +109,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    """500 error handler using Jinja2 template with deprecated filters"""
+    """500 error handler"""
     db.session.rollback()
     from utils.request_context import get_request_context
     ctx = get_request_context()
@@ -124,12 +128,12 @@ def internal_error(error):
 
 @app.route('/admin')
 def admin_dashboard():
-    """Admin dashboard using Jinja2 templates with deprecated filters"""
+    """Admin dashboard"""
     from utils.request_context import get_request_context
     ctx = get_request_context()
     request_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
     
-    # Get data using deprecated context access
+    # Get data
     users = User.query.all()
     projects = Project.query.all()
     tasks = Task.query.all()
