@@ -183,13 +183,18 @@ To skip seeding, set the environment variable `SKIP_SEED=true` in the backend se
 ProjectHub/
 ├── backend/              # Flask backend application
 │   ├── app.py          # Main Flask app
+│   ├── db_ext.py       # Custom SQLAlchemy extension
 │   ├── models.py       # Database models
 │   ├── database.py     # Database initialization and seeding
 │   ├── auth.py         # Authentication logic
 │   ├── config.py       # Configuration (with hardcoded secrets)
 │   ├── requirements.txt # Python dependencies
 │   ├── docker-entrypoint.sh  # Container startup script
-│   ├── routes/         # Route handlers
+│   ├── analytics/      # Analytics subsystem (SQLAlchemy 2.x patterns)
+│   │   ├── __init__.py # Blueprint registration
+│   │   ├── routes.py   # Analytics API endpoints
+│   │   └── service.py  # Analytics logic with pandas integration
+│   ├── routes/         # Route handlers (legacy patterns)
 │   │   ├── __init__.py
 │   │   ├── api.py      # General API routes (includes user management)
 │   │   ├── auth.py     # Authentication routes
@@ -197,18 +202,23 @@ ProjectHub/
 │   │   ├── tasks.py    # Task management routes
 │   │   ├── documents.py # Document management routes
 │   │   ├── messages.py  # Messaging routes
-│   │   └── analytics.py # Analytics and reporting routes
+│   │   └── analytics.py # Legacy analytics routes (uses QueryHelper)
 │   ├── utils/          # Utility modules
 │   │   ├── __init__.py
 │   │   ├── logger.py   # Logging configuration
 │   │   ├── file_handler.py # File handling utilities
 │   │   ├── request_context.py # Request context management
-│   │   ├── query_helpers.py # Database query helpers
+│   │   ├── query_helpers.py # Database query helpers (legacy patterns)
 │   │   ├── datetime_utils.py # Datetime utilities
 │   │   └── jinja_filters.py # Jinja2 template filters
 │   ├── templates/      # HTML templates
 │   │   ├── error.html  # Error pages
 │   │   └── admin.html  # Admin dashboard
+│   ├── tests/          # Test suite
+│   │   ├── conftest.py # Test fixtures and configuration
+│   │   └── analytics/  # Analytics tests (SQLAlchemy 2.x patterns)
+│   │       ├── test_analytics_endpoints.py
+│   │       └── test_analytics_service.py
 │   ├── uploads/        # Uploaded files directory
 │   └── logs/           # Application logs directory
 ├── frontend/           # React frontend application
@@ -271,32 +281,185 @@ The application includes vulnerabilities across all OWASP Top 10 categories:
 
 ## Breaking Changes on Dependency Upgrades
 
-This application uses older patterns and APIs that will break when upgrading dependencies. The following table summarizes the breaking changes:
+This application uses older patterns and APIs that will break when upgrading dependencies. The codebase is designed to force comprehensive refactoring when students attempt to upgrade dependencies to address security vulnerabilities.
+
+### Legacy Pattern Usage Summary
 
 | Pattern | Current Version | Breaking Version | Files Affected | Instances | Migration Complexity |
 |---------|----------------|------------------|----------------|-----------|---------------------|
-| `Model.query` (SQLAlchemy) | SQLAlchemy 1.4.x (pinned, via Flask-SQLAlchemy 2.3.2) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
-| `datetime.utcnow()` (Python) | Python 3.6 (Ubuntu 18.04 default) | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
-| `_request_ctx_stack` (Flask) | Flask 1.1.4 | Flask 2.0+ | 4+ files | 10+ | **MEDIUM** - Replace with `g` object |
-| `@contextfilter` (Jinja2) | Jinja2 2.11.3 | Jinja2 3.0+ | 2 files | 7 filters | **MEDIUM** - Replace with `@pass_context` |
-| `yaml.load()` without Loader (PyYAML) | PyYAML 3.13 | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
+| `Model.query` (SQLAlchemy) | SQLAlchemy 1.4.0 | SQLAlchemy 2.0+ | 10 files | ~83 | **CRITICAL** - Replace with `db.session.execute(select(Model))` |
+| `datetime.utcnow()` (Python) | Python 3.6 (Ubuntu 18.04) | Python 3.12+ | 6 files | 13 | **HIGH** - Replace with `datetime.now(timezone.utc)` |
+| `_request_ctx_stack` (Flask) | Flask 1.1.4 | Flask 2.0+ | 3 files | 10 | **MEDIUM** - Replace with `g` object |
+| `@contextfilter` (Jinja2) | Jinja2 2.11.3 | Jinja2 3.0+ | 1 file | 7 | **MEDIUM** - Replace with `@pass_context` |
+| `yaml.load()` without Loader | PyYAML 3.13 | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
 
-**Version Details:**
-- **SQLAlchemy**: SQLAlchemy is pinned to `<2.0,>=1.4.0` in requirements.txt to work with Flask-SQLAlchemy 2.3.2. The `Model.query` pattern works in SQLAlchemy 1.4.x but is **removed** in SQLAlchemy 2.0+. Upgrading to SQLAlchemy 2.0+ will break all `Model.query` usage (100+ instances). This pattern must be migrated to `db.session.query(Model)` or `db.session.get(Model, id)` before upgrading.
-- **Python**: Ubuntu 18.04 includes Python 3.6. `datetime.utcnow()` is deprecated in Python 3.12 and will be removed in future versions.
-- **Flask**: Version 1.1.4 uses `_request_ctx_stack` which is removed in Flask 2.0+ (replaced with `g` object).
-- **Jinja2**: Version 2.11.3 uses `@contextfilter` which is replaced with `@pass_context` in Jinja2 3.0+.
-- **PyYAML**: Version 3.13 allows `yaml.load()` without Loader (with security warnings). PyYAML 6.0+ removes this unsafe default.
+### The Dependency Forcing Mechanism
 
-**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing. The current versions work correctly, but upgrading to the breaking versions will require refactoring.
+The application includes a **pandas-based forcing mechanism** that creates an unavoidable upgrade cascade:
+
+#### Current State (Stable)
+```
+SQLAlchemy 1.4.0 + pandas 1.1.5 + Flask-SQLAlchemy 2.3.2
+├─ Legacy code: Uses Model.query.* (83 instances) ✓ Works
+├─ Analytics: Uses SQLAlchemy 2.x patterns ✓ Works
+└─ All features functional ✓
+```
+
+#### The Trap: Upgrading pandas
+When students attempt to upgrade pandas to address CVEs or get newer features:
+
+```
+pandas 1.1.5 → pandas 2.0+
+    ↓
+FORCES SQLAlchemy >=2.0.0 (hard dependency requirement)
+    ↓
+SQLAlchemy 2.0 removes Model.query as a class attribute
+    ↓
+Legacy code breaks: 83 instances of Model.query.* fail
+    ↓
+Analytics continues working (already uses 2.x patterns)
+    ↓
+Students must refactor ALL legacy queries to SQLAlchemy 2.x patterns
+```
+
+#### Why This Forcing Works
+
+1. **pandas 1.1.5** (current): Compatible with SQLAlchemy 1.4.0
+2. **pandas 2.0+** (future): Requires SQLAlchemy >=2.0.0 (hard dependency)
+3. **SQLAlchemy 2.0+**: Removes `Model.query` as a class attribute (breaking change)
+4. **Analytics code**: Already uses SQLAlchemy 2.x patterns (`select()`, `db.session.execute()`)
+5. **Legacy code**: Uses `Model.query.*` in 83 places across 10 files
+
+### Detailed Version Constraints
+
+**SQLAlchemy 1.4.0** (Transitional Version):
+- Supports BOTH legacy patterns (`Model.query`) AND 2.x patterns (`select()`)
+- Works with Flask-SQLAlchemy 2.3.2
+- Works with pandas 1.1.5
+- Allows gradual migration between patterns
+
+**pandas Version Requirements**:
+- **pandas 1.1.5**: Requires SQLAlchemy >=1.3.0 (satisfied by 1.4.0)
+- **pandas 2.0.0+**: Requires SQLAlchemy >=2.0.0 (FORCES upgrade)
+
+**SQLAlchemy 2.0+ Breaking Changes**:
+- `Model.query` removed as a class attribute
+- Must use `db.session.execute(select(Model))` instead
+- All 83 instances of legacy patterns must be migrated
+- Requires Flask-SQLAlchemy 3.0+ (additional breaking changes)
+
+### Legacy Code Distribution
+
+Files using `Model.query` patterns:
+- `backend/routes/api.py` - 18 instances
+- `backend/utils/query_helpers.py` - 19 instances
+- `backend/routes/analytics.py` (old) - Uses QueryHelper (legacy)
+- `backend/routes/auth.py` - 5 instances
+- `backend/routes/messages.py` - 4 instances
+- `backend/routes/tasks.py` - 8 instances
+- `backend/routes/projects.py` - 7 instances
+- `backend/routes/documents.py` - 5 instances
+- `backend/database.py` - 13 instances
+- `backend/auth.py` - 1 instance
+- `backend/app.py` - 3 instances
+
+**Total**: ~83 instances across 10+ files
+
+### Analytics Subsystem (Forward Compatible)
+
+The `backend/analytics/` subsystem is **intentionally built with SQLAlchemy 2.x patterns**:
+- Uses `select()` for query construction
+- Uses `db.session.execute()` for execution
+- Uses `db.session.scalars()` for scalar results
+- Uses `db.session.get()` for primary key lookups
+- **Zero usage** of `Model.query` patterns
+
+This subsystem:
+1. Works correctly on SQLAlchemy 1.4.0 (current)
+2. Will continue working on SQLAlchemy 2.0+ (future)
+3. Demonstrates the migration target for legacy code
+4. Integrates pandas 1.1.5 for data processing
+
+### Forced Refactoring Scenario
+
+When students upgrade pandas:
+
+```bash
+# Student action
+pip install pandas>=2.0  # To fix CVEs
+
+# Automatic cascade
+pip resolver: pandas 2.x requires SQLAlchemy>=2.0
+pip resolver: Installing SQLAlchemy 2.0.0
+
+# Result
+✗ 83 instances of Model.query.* break
+✓ Analytics endpoints continue working
+✗ Dashboard, messages, user management fail
+✗ Tests fail (except analytics tests)
+
+# Required fix
+Refactor all 83 Model.query instances to:
+  User.query.all() → db.session.execute(select(User)).scalars().all()
+  User.query.get(id) → db.session.get(User, id)
+  User.query.filter_by(...).first() → db.session.execute(select(User).filter_by(...)).scalar_one_or_none()
+```
+
+### Migration Effort Estimate
+
+- **Time**: 8-12 hours for complete refactoring
+- **Files**: 10+ files to modify
+- **Instances**: 83 query patterns to update
+- **Testing**: Full regression testing required
+- **Complexity**: High - requires understanding SQLAlchemy 2.x Core patterns
+
+### Other Breaking Changes
+
+**Python 3.12+**:
+- `datetime.utcnow()` is deprecated (13 instances in 6 files)
+- Must replace with `datetime.now(timezone.utc)`
+
+**Flask 2.0+**:
+- `_request_ctx_stack` removed (10 instances in 3 files)
+- Must replace with `g` object or current_app
+
+**Jinja2 3.0+**:
+- `@contextfilter` renamed to `@pass_context` (7 filters in 1 file)
+
+**PyYAML 6.0+**:
+- `yaml.load()` requires explicit `Loader` parameter (1 instance)
+
+### Educational Value
+
+This design teaches students:
+1. **Dependency Management**: Understanding transitive dependencies
+2. **Breaking Changes**: How major version upgrades cascade
+3. **Technical Debt**: Cost of delaying migrations
+4. **Modern Patterns**: SQLAlchemy 2.x Core patterns
+5. **Testing**: Importance of comprehensive test coverage
+6. **Planning**: Gradual migration strategies (analytics shows the way)
+
+**Note**: These patterns are intentionally designed to create realistic upgrade scenarios found in production systems. The current configuration is stable and functional, but future upgrades require careful planning and significant refactoring effort.
 
 ## Analytics Subsystem
 
-ProjectHub includes an advanced analytics subsystem that provides data-driven insights and reporting capabilities. The analytics module is built using modern SQLAlchemy 2.x-style patterns and pandas for data processing.
+ProjectHub includes **two analytics implementations** to demonstrate the difference between legacy and modern patterns:
+
+### Legacy Analytics (`backend/routes/analytics.py`)
+- Uses `QueryHelper` class which wraps `Model.query` patterns
+- Compatible with current SQLAlchemy 1.4.0
+- **Will break** when upgrading to SQLAlchemy 2.0+
+- Endpoints: `/api/analytics/stats`, `/api/analytics/search`, `/api/analytics/user/<id>`
+
+### Modern Analytics (`backend/analytics/`)
+- Built exclusively with **SQLAlchemy 2.x patterns** and **pandas** integration
+- Forward-compatible with SQLAlchemy 2.0+
+- Demonstrates migration target for legacy code
+- Endpoints: `/analytics/tasks/*`, `/analytics/projects/*`, `/analytics/users/*`, `/analytics/messaging/*`
 
 ### Architecture
 
-The analytics subsystem is located in `backend/analytics/` and consists of:
+The modern analytics subsystem is located in `backend/analytics/` and consists of:
 
 - **`service.py`**: Core analytics logic using SQLAlchemy 2.x patterns (`select()`, `db.session.execute()`, `db.session.scalars()`, `db.session.get()`)
 - **`routes.py`**: REST API endpoints for accessing analytics data
@@ -311,34 +474,74 @@ The analytics subsystem is located in `backend/analytics/` and consists of:
 
 ### Analytics Endpoints
 
-All analytics endpoints require authentication via JWT token.
+#### Modern Analytics (SQLAlchemy 2.x + pandas)
+All modern analytics endpoints require authentication via JWT token.
 
-#### Task Analytics
+**Task Analytics:**
 - `GET /analytics/tasks/by-status` - Task counts grouped by status (pending, in_progress, completed)
 - `GET /analytics/tasks/average-completion-time` - Average time to complete tasks (in days)
 - `GET /analytics/tasks/by-priority` - Task distribution and metrics by priority level
 
-#### Project Analytics
+**Project Analytics:**
 - `GET /analytics/projects/summary` - Summary of all projects with task counts and percentages
 - `GET /analytics/projects/<id>/timeline` - Timeline view of all tasks in a specific project
 
-#### User Analytics
+**User Analytics:**
 - `GET /analytics/users/<id>/productivity` - Productivity metrics for a specific user (completion rate, task distribution)
 
-#### Messaging Analytics
+**Messaging Analytics:**
 - `GET /analytics/messaging/activity` - Message activity aggregated by date
 
-### Usage Example
+#### Legacy Analytics (Model.query patterns)
+Legacy endpoints that will break on SQLAlchemy 2.0+ upgrade:
 
+- `GET /api/analytics/stats` - Application statistics (requires auth)
+- `GET /api/analytics/search?q=<term>` - Search across users and projects (requires auth)
+- `GET /api/analytics/user/<id>` - Get user analytics details (requires auth)
+
+### Usage Examples
+
+#### Modern Analytics (Recommended)
 ```python
-# Example: Get tasks by status
+import requests
+
+# Get JWT token
+login_response = requests.post('http://localhost:5000/api/auth/login', 
+    json={'username': 'Admin', 'password': 'Admin'})
+token = login_response.json()['token']
+
+# Call modern analytics endpoint
 response = requests.get(
     'http://localhost:5000/analytics/tasks/by-status',
     headers={'Authorization': f'Bearer {token}'}
 )
 
 data = response.json()
-# Returns: {'success': True, 'data': [{'status': 'completed', 'count': 10}, ...]}
+# Returns: {
+#   'success': True, 
+#   'data': [
+#     {'status': 'completed', 'count': 12}, 
+#     {'status': 'pending', 'count': 18}, 
+#     {'status': 'in_progress', 'count': 9}
+#   ]
+# }
+```
+
+#### Legacy Analytics (Will break on SQLAlchemy 2.0+)
+```python
+# Call legacy analytics endpoint
+response = requests.get(
+    'http://localhost:5000/api/analytics/stats',
+    headers={'Authorization': f'Bearer {token}'}
+)
+
+stats = response.json()
+# Returns: {
+#   'user_count': 6, 
+#   'project_count': 6, 
+#   'task_count': 39,
+#   ...
+# }
 ```
 
 ### Implementation Notes
@@ -379,7 +582,48 @@ pytest tests/analytics/
 
 ### Future Compatibility
 
-The analytics subsystem is designed for forward compatibility with future dependency upgrades. It uses SQLAlchemy 2.x patterns that will continue to work when upgrading from SQLAlchemy 1.4.x to 2.0+, unlike legacy code that relies on `Model.query`.
+The modern analytics subsystem is designed for forward compatibility with future dependency upgrades. It uses SQLAlchemy 2.x patterns that will continue to work when upgrading from SQLAlchemy 1.4.x to 2.0+, unlike legacy code that relies on `Model.query`.
+
+### Summary: Why Two Analytics Implementations?
+
+The dual analytics approach serves an educational purpose:
+
+1. **Legacy Analytics** (`/api/analytics/*`):
+   - Shows typical production code using `Model.query`
+   - Works fine on SQLAlchemy 1.4.0
+   - Will break when pandas upgrade forces SQLAlchemy 2.0+
+   
+2. **Modern Analytics** (`/analytics/*`):
+   - Demonstrates SQLAlchemy 2.x migration target
+   - Already compatible with SQLAlchemy 2.0+
+   - Proves that the refactored pattern works
+   - Integrates pandas for data processing
+
+When students upgrade pandas and break the legacy code, they can:
+- See working examples in the modern analytics module
+- Compare legacy vs. modern patterns side-by-side
+- Use analytics tests as reference for migration
+- Learn best practices for modern SQLAlchemy development
+
+### Quick Reference: Legacy vs Modern Patterns
+
+| Component | Path | Pattern | SQLAlchemy 2.0 Compatible? |
+|-----------|------|---------|---------------------------|
+| **Modern Analytics** | `backend/analytics/` | SQLAlchemy 2.x + pandas | ✅ Yes |
+| Analytics Tests | `backend/tests/analytics/` | SQLAlchemy 2.x | ✅ Yes |
+| Legacy Analytics | `backend/routes/analytics.py` | Model.query | ❌ No |
+| User Routes | `backend/routes/api.py` | Model.query | ❌ No |
+| Auth Routes | `backend/routes/auth.py` | Model.query | ❌ No |
+| Project Routes | `backend/routes/projects.py` | Model.query | ❌ No |
+| Task Routes | `backend/routes/tasks.py` | Model.query | ❌ No |
+| Document Routes | `backend/routes/documents.py` | Model.query | ❌ No |
+| Message Routes | `backend/routes/messages.py` | Model.query | ❌ No |
+| Query Helpers | `backend/utils/query_helpers.py` | Model.query | ❌ No |
+| Database Seeding | `backend/database.py` | Model.query | ❌ No |
+| Main App | `backend/app.py` | Model.query | ❌ No |
+
+**Total Legacy Instances**: ~83 across 10 files  
+**Migration Target**: See `backend/analytics/service.py` for examples
 
 ## API Endpoints
 
