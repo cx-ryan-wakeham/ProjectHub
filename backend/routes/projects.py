@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import Project, User, db
+from db_ext import db
+from models import Project, User
 from auth import require_auth, get_current_user
 from utils.logger import log_user_action
 from sqlalchemy import text

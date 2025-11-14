@@ -1,5 +1,6 @@
 # Database query helpers
-from models import db, User, Project, Task, Document, Message, Comment
+from db_ext import db
+from models import User, Project, Task, Document, Message, Comment
 
 class QueryHelper:
     """Helper class for database queries"""

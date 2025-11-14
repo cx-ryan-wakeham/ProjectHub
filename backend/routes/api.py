@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import User, Project, Task, Document, Message, Comment, db
+from db_ext import db
+from models import User, Project, Task, Document, Message, Comment
 from auth import get_current_user, require_auth
 from utils.logger import log_api_request, log_user_action
 from utils.request_context import get_request_context, get_request_metadata, request_id

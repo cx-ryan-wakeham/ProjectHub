@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify
 from config import Config
-from models import User, db
+from db_ext import db
+from models import User
 from utils.logger import log_login_attempt, log_user_action
 
 JWT_SECRET = Config.JWT_SECRET_KEY

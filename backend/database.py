@@ -1,5 +1,6 @@
 # Database initialization and connection setup
-from models import db, User, Project, Task, Document, Message, Comment
+from db_ext import db
+from models import User, Project, Task, Document, Message, Comment
 from config import Config
 import hashlib
 import os

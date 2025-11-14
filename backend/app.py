@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from config import Config
-from models import db, User, Project, Task
+from db_ext import db
+from models import User, Project, Task
 from database import init_db
 
 # Import route handlers
@@ -72,8 +73,8 @@ app.register_blueprint(messages.bp, url_prefix='/api/messages')
 app.register_blueprint(api.bp, url_prefix='/api/v1')
 
 # Register analytics routes
-from routes import analytics
-app.register_blueprint(analytics.bp, url_prefix='/api')
+from analytics import bp as analytics_bp
+app.register_blueprint(analytics_bp)
 
 # Create upload directory
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)

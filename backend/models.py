@@ -1,9 +1,7 @@
 # Database models
-from flask_sqlalchemy import SQLAlchemy
+from db_ext import db
 from datetime import datetime
 import hashlib
-
-db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = 'users'

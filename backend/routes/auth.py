@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify, session
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models import User, db
+from db_ext import db
+from models import User
 from auth import generate_token, get_current_user
 from config import Config
 from utils.logger import log_login_attempt, log_user_action

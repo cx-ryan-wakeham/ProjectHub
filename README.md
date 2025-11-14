@@ -11,7 +11,7 @@ ProjectHub is a project management web application that demonstrates common secu
 - **Task Management**: Assign tasks to users, track status, add comments
 - **Document Management**: Upload documents with metadata extraction (supports XML, YAML, Pickle, images)
 - **Messaging**: Send and receive messages between users
-- **Analytics**: Application statistics and search functionality
+- **Analytics Subsystem**: Advanced analytics and reporting with pandas-powered data processing (SQLAlchemy 2.x patterns)
 - **Admin Dashboard**: HTML-based admin interface for viewing system data
 - **Request Tracking**: Request ID generation and logging for all API calls
 - **Error Handling**: Custom error pages with request tracking
@@ -38,7 +38,8 @@ ProjectHub is designed to help security professionals, developers, and students 
 - **Backend**: Flask 1.1.4
 - **Frontend**: React 16.8.6
 - **Database**: PostgreSQL 10
-- **ORM**: SQLAlchemy (via Flask-SQLAlchemy 2.3.2)
+- **ORM**: SQLAlchemy 1.4.0 (via Flask-SQLAlchemy 2.3.2)
+- **Data Processing**: pandas 1.1.5
 - **Authentication**: JWT (PyJWT 1.6.4, Flask-JWT-Extended 3.13.1)
 - **Templates**: Jinja2 2.11.3
 - **Containerization**: Docker & Docker Compose
@@ -288,6 +289,97 @@ This application uses older patterns and APIs that will break when upgrading dep
 - **PyYAML**: Version 3.13 allows `yaml.load()` without Loader (with security warnings). PyYAML 6.0+ removes this unsafe default.
 
 **Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing. The current versions work correctly, but upgrading to the breaking versions will require refactoring.
+
+## Analytics Subsystem
+
+ProjectHub includes an advanced analytics subsystem that provides data-driven insights and reporting capabilities. The analytics module is built using modern SQLAlchemy 2.x-style patterns and pandas for data processing.
+
+### Architecture
+
+The analytics subsystem is located in `backend/analytics/` and consists of:
+
+- **`service.py`**: Core analytics logic using SQLAlchemy 2.x patterns (`select()`, `db.session.execute()`, `db.session.scalars()`, `db.session.get()`)
+- **`routes.py`**: REST API endpoints for accessing analytics data
+- **`__init__.py`**: Blueprint registration and module initialization
+
+### Key Features
+
+- **Modern SQLAlchemy Patterns**: All analytics queries use SQLAlchemy 2.x-style syntax with explicit `select()` statements
+- **pandas Integration**: Data processing and aggregation powered by pandas DataFrames
+- **Real-time Analytics**: Compute metrics on-demand from current database state
+- **Comprehensive Testing**: Full test coverage in `tests/analytics/`
+
+### Analytics Endpoints
+
+All analytics endpoints require authentication via JWT token.
+
+#### Task Analytics
+- `GET /analytics/tasks/by-status` - Task counts grouped by status (pending, in_progress, completed)
+- `GET /analytics/tasks/average-completion-time` - Average time to complete tasks (in days)
+- `GET /analytics/tasks/by-priority` - Task distribution and metrics by priority level
+
+#### Project Analytics
+- `GET /analytics/projects/summary` - Summary of all projects with task counts and percentages
+- `GET /analytics/projects/<id>/timeline` - Timeline view of all tasks in a specific project
+
+#### User Analytics
+- `GET /analytics/users/<id>/productivity` - Productivity metrics for a specific user (completion rate, task distribution)
+
+#### Messaging Analytics
+- `GET /analytics/messaging/activity` - Message activity aggregated by date
+
+### Usage Example
+
+```python
+# Example: Get tasks by status
+response = requests.get(
+    'http://localhost:5000/analytics/tasks/by-status',
+    headers={'Authorization': f'Bearer {token}'}
+)
+
+data = response.json()
+# Returns: {'success': True, 'data': [{'status': 'completed', 'count': 10}, ...]}
+```
+
+### Implementation Notes
+
+The analytics subsystem demonstrates modern Python data engineering practices:
+
+1. **SQLAlchemy 2.x Patterns**: No use of legacy `Model.query` syntax
+   ```python
+   # Modern style used in analytics
+   stmt = select(Task.status, func.count(Task.id)).group_by(Task.status)
+   result = db.session.execute(stmt).fetchall()
+   ```
+
+2. **pandas Processing**: DataFrames for aggregation and transformation
+   ```python
+   df = pd.DataFrame.from_records(rows, columns=['status', 'count'])
+   df['percentage'] = (df['count'] / df['count'].sum() * 100)
+   return df.to_dict(orient='records')
+   ```
+
+3. **Session-based Queries**: Direct use of `db.session.get()` for lookups
+   ```python
+   user = db.session.get(User, user_id)
+   ```
+
+### Testing
+
+The analytics subsystem includes comprehensive tests in `backend/tests/analytics/`:
+
+- **`test_analytics_endpoints.py`**: API endpoint integration tests
+- **`test_analytics_service.py`**: Service layer unit tests with pandas validation
+
+Run tests with:
+```bash
+cd backend
+pytest tests/analytics/
+```
+
+### Future Compatibility
+
+The analytics subsystem is designed for forward compatibility with future dependency upgrades. It uses SQLAlchemy 2.x patterns that will continue to work when upgrading from SQLAlchemy 1.4.x to 2.0+, unlike legacy code that relies on `Model.query`.
 
 ## API Endpoints
 
