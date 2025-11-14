@@ -1,14 +1,14 @@
 services:
   db:
-    image: postgres:10  # VULNERABLE: Outdated PostgreSQL version
+    image: postgres:10  # : Outdated PostgreSQL version
     environment:
       POSTGRES_USER: projecthub
-      POSTGRES_PASSWORD: password123  # VULNERABLE: Hardcoded password
+      POSTGRES_PASSWORD: password123  # : Hardcoded password
       POSTGRES_DB: projecthub
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # VULNERABLE: Exposed database port
+      - "5432:5432"  # : Exposed database port
     networks:
       - app-network
 
@@ -19,8 +19,8 @@ services:
     environment:
       DATABASE_URL: postgresql://projecthub:password123@db:5432/projecthub
       DB_HOST: db
-      JWT_SECRET: secret_key_12345  # VULNERABLE: Hardcoded secret
-      AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE  # VULNERABLE: Hardcoded credentials
+      JWT_SECRET: secret_key_12345  # : Hardcoded secret
+      AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE  # : Hardcoded credentials
       AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
     ports:
       - "5000:5000"
@@ -34,7 +34,7 @@ services:
       - db:db
     networks:
       - app-network
-    # VULNERABLE: Running as root
+    # : Running as root
     user: root
 
   frontend:
@@ -54,7 +54,7 @@ services:
       - app-network
 
   nginx:
-    image: nginx:1.14  # VULNERABLE: Outdated Nginx version
+    image: nginx:1.14  # : Outdated Nginx version
     ports:
       - "80:80"
     volumes:

@@ -3,34 +3,34 @@
 terraform {
   required_version = ">= 0.12"
   
-  # VULNERABLE: Backend configuration may expose secrets
+  # : Backend configuration may expose secrets
   backend "s3" {
     bucket = "projecthub-terraform-state"
     key    = "terraform.tfstate"
     region = "us-east-1"
-    # VULNERABLE: No encryption, no access control
+    # : No encryption, no access control
   }
 }
 
-# VULNERABLE: Hardcoded AWS credentials
+# : Hardcoded AWS credentials
 provider "aws" {
   region     = var.aws_region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 }
 
-# VULNERABLE: EC2 instance with excessive permissions
+# : EC2 instance with excessive permissions
 resource "aws_instance" "projecthub_app" {
-  ami           = "ami-0c55b159cbfafe1f0"  # VULNERABLE: Outdated AMI
+  ami           = "ami-0c55b159cbfafe1f0"  # : Outdated AMI
   instance_type = "t2.micro"
   
-  # VULNERABLE: Security group allows all traffic
+  # : Security group allows all traffic
   security_groups = [aws_security_group.projecthub_sg.name]
   
-  # VULNERABLE: IAM instance profile with excessive permissions
+  # : IAM instance profile with excessive permissions
   iam_instance_profile = aws_iam_instance_profile.projecthub_profile.name
   
-  # VULNERABLE: User data with hardcoded secrets
+  # : User data with hardcoded secrets
   user_data = <<-EOF
     #!/bin/bash
     export DATABASE_URL="postgresql://projecthub:${var.db_password}@${aws_db_instance.projecthub_db.endpoint}/projecthub"
@@ -45,12 +45,12 @@ resource "aws_instance" "projecthub_app" {
   }
 }
 
-# VULNERABLE: Security group open to the world
+# : Security group open to the world
 resource "aws_security_group" "projecthub_sg" {
   name        = "projecthub-security-group"
   description = "Security group for ProjectHub"
 
-  # VULNERABLE: Allows all inbound traffic
+  # : Allows all inbound traffic
   ingress {
     from_port   = 0
     to_port     = 65535
@@ -58,7 +58,7 @@ resource "aws_security_group" "projecthub_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # VULNERABLE: Allows all outbound traffic
+  # : Allows all outbound traffic
   egress {
     from_port   = 0
     to_port     = 65535
@@ -71,29 +71,29 @@ resource "aws_security_group" "projecthub_sg" {
   }
 }
 
-# VULNERABLE: RDS instance with weak configuration
+# : RDS instance with weak configuration
 resource "aws_db_instance" "projecthub_db" {
   identifier = "projecthub-db"
   engine     = "postgres"
-  engine_version = "10.0"  # VULNERABLE: Outdated PostgreSQL version
+  engine_version = "10.0"  # : Outdated PostgreSQL version
   
   instance_class = "db.t2.micro"
   allocated_storage = 20
   
   db_name  = "projecthub"
   username = "projecthub"
-  password = var.db_password  # VULNERABLE: Weak password
+  password = var.db_password  # : Weak password
   
-  # VULNERABLE: Publicly accessible database
+  # : Publicly accessible database
   publicly_accessible = true
   
-  # VULNERABLE: No encryption at rest
+  # : No encryption at rest
   storage_encrypted = false
   
-  # VULNERABLE: No backup retention
+  # : No backup retention
   backup_retention_period = 0
   
-  # VULNERABLE: No deletion protection
+  # : No deletion protection
   deletion_protection = false
   
   tags = {

@@ -44,10 +44,8 @@ function Dashboard({ user }) {
     loadProjects();
   };
 
-  // VULNERABLE: Reflected XSS in search results
   const highlightSearch = (text) => {
     if (!searchQuery) return text;
-    // VULNERABLE: No sanitization - allows XSS
     const regex = new RegExp(`(${searchQuery})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
   };
@@ -94,7 +92,6 @@ function Dashboard({ user }) {
               <h4>
                 <Link to={`/projects/${project.id}`}>{project.name}</Link>
               </h4>
-              {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
               <div dangerouslySetInnerHTML={{ __html: highlightSearch(project.description || '') }} />
             </div>
           ))}

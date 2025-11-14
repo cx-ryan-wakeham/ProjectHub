@@ -90,7 +90,6 @@ function ProjectDetail({ user }) {
         
         <div style={{ marginBottom: '1rem' }}>
           <p><strong>Description:</strong></p>
-          {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
           <div dangerouslySetInnerHTML={{ __html: project.description || 'No description provided.' }} />
         </div>
         

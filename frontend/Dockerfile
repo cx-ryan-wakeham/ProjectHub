@@ -1,5 +1,4 @@
 # Frontend Dockerfile with intentional security vulnerabilities
-# VULNERABLE: Outdated Node.js version
 FROM node:10
 
 WORKDIR /app
@@ -16,6 +15,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# VULNERABLE: Running as root
 CMD ["npm", "start"]
 

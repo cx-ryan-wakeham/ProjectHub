@@ -1,4 +1,4 @@
-# Task management routes with intentional security vulnerabilities
+# Task management routes
 from flask import Blueprint, request, jsonify
 import sys
 import os
@@ -14,25 +14,25 @@ bp = Blueprint('tasks', __name__)
 @bp.route('', methods=['GET'])
 @require_auth
 def get_tasks():
-    """Get all tasks - VULNERABLE: SQL Injection, IDOR, broken access control"""
+    """Get all tasks - : SQL Injection, IDOR, broken access control"""
     user = get_current_user()
     
-    # VULNERABLE: SQL Injection in filter parameters
+    # : SQL Injection in filter parameters
     project_id = request.args.get('project_id')
     status = request.args.get('status', '')
     search = request.args.get('search', '')
     assigned_to = request.args.get('assigned_to')
     
-    # VULNERABLE: Raw SQL query with user input (SQL Injection)
+    # : Raw SQL query with user input (SQL Injection)
     if search:
-        # VULNERABLE: Direct string interpolation in SQL
+        # : Direct string interpolation in SQL
         query = f"SELECT * FROM tasks WHERE title LIKE '%{search}%' OR description LIKE '%{search}%'"
         if project_id:
             query += f" AND project_id = {project_id}"
         result = db.session.execute(text(query))
         tasks = [dict(row) for row in result]
     else:
-        # VULNERABLE: Broken access control - users can see all tasks
+        # : Broken access control - users can see all tasks
         query = Task.query
         if project_id:
             query = query.filter_by(project_id=project_id)
@@ -42,7 +42,7 @@ def get_tasks():
             query = query.filter_by(assigned_to=assigned_to)
         tasks = query.all()
     
-    # VULNERABLE: Exposes all tasks regardless of user permissions
+    # : Exposes all tasks regardless of user permissions
     return jsonify({
         'tasks': [t.to_dict() for t in tasks]
     })
@@ -50,16 +50,16 @@ def get_tasks():
 @bp.route('/<int:task_id>', methods=['GET'])
 @require_auth
 def get_task(task_id):
-    """Get task by ID - VULNERABLE: IDOR, broken access control"""
+    """Get task by ID - : IDOR, broken access control"""
     user = get_current_user()
     
-    # VULNERABLE: IDOR - no check if user has access to this task
+    # : IDOR - no check if user has access to this task
     task = Task.query.get(task_id)
     
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
-    # VULNERABLE: Broken access control - allows access to any task
+    # : Broken access control - allows access to any task
     # Should check project permissions
     
     log_user_action(user.id, 'view_task', f"Task ID: {task_id}")
@@ -71,7 +71,7 @@ def get_task(task_id):
 @bp.route('', methods=['POST'])
 @require_auth
 def create_task():
-    """Create task - VULNERABLE: No input validation, XSS, broken access control"""
+    """Create task - : No input validation, XSS, broken access control"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -85,17 +85,17 @@ def create_task():
     if not title or not project_id:
         return jsonify({'error': 'Title and project_id required'}), 400
     
-    # VULNERABLE: No check if user has access to the project
+    # : No check if user has access to the project
     project = Project.query.get(project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # VULNERABLE: No input sanitization (XSS in title/description)
-    # VULNERABLE: No validation
+    # : No input sanitization (XSS in title/description)
+    # : No validation
     
     task = Task(
         title=title,
-        description=description,  # VULNERABLE: Stored without sanitization
+        description=description,  # : Stored without sanitization
         project_id=project_id,
         assigned_to=assigned_to,
         created_by=user.id,
@@ -106,7 +106,7 @@ def create_task():
         try:
             task.due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
         except:
-            pass  # VULNERABLE: Silent failure
+            pass  # : Silent failure
     
     db.session.add(task)
     db.session.commit()
@@ -121,7 +121,7 @@ def create_task():
 @bp.route('/<int:task_id>', methods=['PUT'])
 @require_auth
 def update_task(task_id):
-    """Update task - VULNERABLE: Broken access control, IDOR, no input validation"""
+    """Update task - : Broken access control, IDOR, no input validation"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -130,7 +130,7 @@ def update_task(task_id):
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
-    # VULNERABLE: Broken access control - any user can modify any task
+    # : Broken access control - any user can modify any task
     # Should check: task.created_by == user.id or user.role in ['admin', 'project_manager']
     
     title = data.get('title')
@@ -143,7 +143,7 @@ def update_task(task_id):
     if title:
         task.title = title
     if description is not None:
-        # VULNERABLE: No input sanitization (XSS)
+        # : No input sanitization (XSS)
         task.description = description
     if status:
         task.status = status
@@ -169,7 +169,7 @@ def update_task(task_id):
 @bp.route('/<int:task_id>', methods=['DELETE'])
 @require_auth
 def delete_task(task_id):
-    """Delete task - VULNERABLE: Broken access control, IDOR"""
+    """Delete task - : Broken access control, IDOR"""
     user = get_current_user()
     
     task = Task.query.get(task_id)
@@ -177,7 +177,7 @@ def delete_task(task_id):
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
-    # VULNERABLE: Broken access control - any user can delete any task
+    # : Broken access control - any user can delete any task
     # Should check: task.created_by == user.id or user.role == 'admin'
     
     db.session.delete(task)
@@ -190,24 +190,24 @@ def delete_task(task_id):
 @bp.route('/<int:task_id>/comments', methods=['GET'])
 @require_auth
 def get_task_comments(task_id):
-    """Get task comments - VULNERABLE: IDOR"""
+    """Get task comments - : IDOR"""
     user = get_current_user()
     
     task = Task.query.get(task_id)
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
-    # VULNERABLE: IDOR - no access control check
+    # : IDOR - no access control check
     comments = Comment.query.filter_by(task_id=task_id).all()
     
     return jsonify({
-        'comments': [c.to_dict() for c in comments]  # VULNERABLE: XSS in content
+        'comments': [c.to_dict() for c in comments]  # : XSS in content
     })
 
 @bp.route('/<int:task_id>/comments', methods=['POST'])
 @require_auth
 def create_task_comment(task_id):
-    """Create task comment - VULNERABLE: XSS, no input validation, IDOR"""
+    """Create task comment - : XSS, no input validation, IDOR"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -220,13 +220,13 @@ def create_task_comment(task_id):
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
-    # VULNERABLE: No input sanitization (XSS)
-    # VULNERABLE: IDOR - no access control check
+    # : No input sanitization (XSS)
+    # : IDOR - no access control check
     
     comment = Comment(
         task_id=task_id,
         user_id=user.id,
-        content=content  # VULNERABLE: Stored without sanitization
+        content=content  # : Stored without sanitization
     )
     
     db.session.add(comment)

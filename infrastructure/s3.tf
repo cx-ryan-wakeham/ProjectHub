@@ -1,15 +1,15 @@
 # S3 bucket configuration with intentional security vulnerabilities
-# VULNERABLE: Public read access
-# VULNERABLE: No encryption
-# VULNERABLE: Exposed bucket policy
+# : Public read access
+# : No encryption
+# : Exposed bucket policy
 
-# VULNERABLE: S3 bucket with public access
+# : S3 bucket with public access
 resource "aws_s3_bucket" "projecthub_files" {
   bucket = "projecthub-files-public"
   
-  # VULNERABLE: No versioning
-  # VULNERABLE: No encryption
-  # VULNERABLE: No lifecycle policies
+  # : No versioning
+  # : No encryption
+  # : No lifecycle policies
   
   tags = {
     Name = "projecthub-files"
@@ -17,17 +17,17 @@ resource "aws_s3_bucket" "projecthub_files" {
   }
 }
 
-# VULNERABLE: S3 bucket public access block disabled
+# : S3 bucket public access block disabled
 resource "aws_s3_bucket_public_access_block" "projecthub_files" {
   bucket = aws_s3_bucket.projecthub_files.id
 
-  block_public_acls       = false  # VULNERABLE: Allows public ACLs
-  block_public_policy     = false  # VULNERABLE: Allows public policies
-  ignore_public_acls      = false  # VULNERABLE: Doesn't ignore public ACLs
-  restrict_public_buckets = false  # VULNERABLE: Doesn't restrict public buckets
+  block_public_acls       = false  # : Allows public ACLs
+  block_public_policy     = false  # : Allows public policies
+  ignore_public_acls      = false  # : Doesn't ignore public ACLs
+  restrict_public_buckets = false  # : Doesn't restrict public buckets
 }
 
-# VULNERABLE: S3 bucket policy allowing public read access
+# : S3 bucket policy allowing public read access
 resource "aws_s3_bucket_policy" "projecthub_files_policy" {
   bucket = aws_s3_bucket.projecthub_files.id
 
@@ -37,7 +37,7 @@ resource "aws_s3_bucket_policy" "projecthub_files_policy" {
       {
         Sid    = "PublicReadGetObject"
         Effect = "Allow"
-        Principal = "*"  # VULNERABLE: Allows anyone
+        Principal = "*"  # : Allows anyone
         Action = [
           "s3:GetObject",
           "s3:PutObject",
@@ -49,27 +49,27 @@ resource "aws_s3_bucket_policy" "projecthub_files_policy" {
   })
 }
 
-# VULNERABLE: S3 bucket for Terraform state (no encryption)
+# : S3 bucket for Terraform state (no encryption)
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "projecthub-terraform-state"
   
-  # VULNERABLE: No encryption
-  # VULNERABLE: No versioning
-  # VULNERABLE: Public access not blocked
+  # : No encryption
+  # : No versioning
+  # : Public access not blocked
   
   tags = {
     Name = "terraform-state"
   }
 }
 
-# VULNERABLE: S3 bucket CORS configuration allowing all origins
+# : S3 bucket CORS configuration allowing all origins
 resource "aws_s3_bucket_cors_configuration" "projecthub_files_cors" {
   bucket = aws_s3_bucket.projecthub_files.id
 
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
-    allowed_origins = ["*"]  # VULNERABLE: Allows all origins
+    allowed_origins = ["*"]  # : Allows all origins
     expose_headers  = ["ETag"]
     max_age_seconds = 3000
   }

@@ -1,5 +1,5 @@
 # Terraform outputs with intentional security vulnerabilities
-# VULNERABLE: Exposes sensitive information
+# : Exposes sensitive information
 
 output "ec2_instance_id" {
   description = "EC2 instance ID"
@@ -14,13 +14,13 @@ output "ec2_public_ip" {
 output "rds_endpoint" {
   description = "RDS instance endpoint"
   value       = aws_db_instance.projecthub_db.endpoint
-  # VULNERABLE: Exposes database endpoint
+  # : Exposes database endpoint
 }
 
 output "rds_password" {
   description = "RDS database password"
   value       = var.db_password
-  sensitive   = false  # VULNERABLE: Should be true
+  sensitive   = false  # : Should be true
 }
 
 output "s3_bucket_name" {
@@ -31,18 +31,18 @@ output "s3_bucket_name" {
 output "iam_access_key_id" {
   description = "IAM access key ID"
   value       = aws_iam_access_key.projecthub_key.id
-  # VULNERABLE: Exposes access key
+  # : Exposes access key
 }
 
 output "iam_secret_access_key" {
   description = "IAM secret access key"
   value       = aws_iam_access_key.projecthub_key.secret
-  sensitive   = false  # VULNERABLE: Should be true - exposes secret key
+  sensitive   = false  # : Should be true - exposes secret key
 }
 
 output "jwt_secret" {
   description = "JWT secret key"
   value       = var.jwt_secret
-  sensitive   = false  # VULNERABLE: Should be true
+  sensitive   = false  # : Should be true
 }
 

@@ -5,7 +5,7 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-# VULNERABLE: Hardcoded credentials in variables
+# : Hardcoded credentials in variables
 variable "aws_access_key" {
   description = "AWS Access Key"
   default     = "AKIAIOSFODNN7EXAMPLE"
@@ -19,13 +19,13 @@ variable "aws_secret_key" {
 variable "db_password" {
   description = "Database password"
   default     = "password123"
-  # VULNERABLE: Password in plain text
+  # : Password in plain text
 }
 
 variable "jwt_secret" {
   description = "JWT secret key"
   default     = "secret_key_12345"
-  # VULNERABLE: Secret in plain text
+  # : Secret in plain text
 }
 
 variable "environment" {

@@ -131,7 +131,6 @@ function MessageCenter({ user }) {
               <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
                 <strong>From:</strong> {sender ? sender.username : 'Unknown'}
               </div>
-              {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
               <div dangerouslySetInnerHTML={{ __html: msg.content }} />
               <small style={{ display: 'block', marginTop: '0.5rem', color: '#999' }}>
                 {new Date(msg.created_at).toLocaleString()}

@@ -1,4 +1,4 @@
-# Main Flask application with intentional security vulnerabilities
+# Main Flask application
 import sys
 import os
 
@@ -18,7 +18,6 @@ from utils.logger import setup_logger
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# VULNERABLE: CORS allows all origins
 # Simple CORS configuration that works with Flask-CORS 3.0.7
 CORS(app, 
      resources={r"/*": {
@@ -71,6 +70,5 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    # VULNERABLE: Running in debug mode in production
     app.run(host='0.0.0.0', port=5000, debug=True)
 

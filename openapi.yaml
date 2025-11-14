@@ -35,8 +35,6 @@ tags:
     description: Document upload and management endpoints
   - name: Messages
     description: Messaging and communication endpoints
-  - name: Notifications
-    description: Notification endpoints
 
 paths:
   /auth/register:
@@ -984,136 +982,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /messages/notifications:
-    get:
-      tags:
-        - Messages
-      summary: Get notifications
-      description: Get user notifications. Vulnerable to XSS in notification messages.
-      operationId: getNotifications
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: is_read
-          in: query
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: List of notifications
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  notifications:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Notification'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /messages/notifications/{notificationId}/read:
-    post:
-      tags:
-        - Messages
-      summary: Mark notification as read
-      description: Mark a notification as read. Vulnerable to IDOR.
-      operationId: markNotificationRead
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: notificationId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Notification marked as read
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-        '404':
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /notifications:
-    get:
-      tags:
-        - Notifications
-      summary: List notifications
-      description: Get user notifications. Vulnerable to XSS in notification messages.
-      operationId: listNotifications
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: is_read
-          in: query
-          schema:
-            type: boolean
-      responses:
-        '200':
-          description: List of notifications
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  notifications:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Notification'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /notifications/{notificationId}:
-    get:
-      tags:
-        - Notifications
-      summary: Get notification by ID
-      description: Retrieve a specific notification. Vulnerable to IDOR and XSS.
-      operationId: getNotification
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: notificationId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Notification details
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  notification:
-                    $ref: '#/components/schemas/Notification'
-        '404':
-          description: Notification not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /v1/projects:
     get:
       tags:
@@ -1553,23 +1421,6 @@ components:
           type: string
           nullable: true
         content:
-          type: string
-        is_read:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-
-    Notification:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: integer
-        message:
-          type: string
-        type:
           type: string
         is_read:
           type: boolean

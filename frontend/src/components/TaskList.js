@@ -125,7 +125,6 @@ function TaskList({ user }) {
         {tasks.map(task => (
           <div key={task.id} className={`card task-item ${task.status} ${task.priority}-priority`}>
             <h4>{task.title}</h4>
-            {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
             <div dangerouslySetInnerHTML={{ __html: task.description || '' }} />
             <p>Status: {task.status} | Priority: {task.priority}</p>
             
@@ -138,7 +137,6 @@ function TaskList({ user }) {
               )}
               {comments[task.id] && comments[task.id].map(comment => (
                 <div key={comment.id} style={{ marginBottom: '0.5rem', padding: '0.5rem', background: '#f0f0f0', borderRadius: '4px' }}>
-                  {/* VULNERABLE: XSS - dangerouslySetInnerHTML without sanitization */}
                   <div dangerouslySetInnerHTML={{ __html: comment.content }} />
                   <small>{new Date(comment.created_at).toLocaleString()}</small>
                 </div>

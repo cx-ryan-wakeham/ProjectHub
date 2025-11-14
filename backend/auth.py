@@ -1,4 +1,4 @@
-# Authentication utilities with intentional security vulnerabilities
+# Authentication utilities
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
@@ -7,20 +7,16 @@ from config import Config
 from models import User, db
 from utils.logger import log_login_attempt, log_user_action
 
-# VULNERABLE: Weak JWT secret
 JWT_SECRET = Config.JWT_SECRET_KEY
 
 def generate_token(user_id, username):
-    """Generate JWT token - VULNERABLE: No expiration or very long expiration"""
-    # VULNERABLE: Tokens never expire (expiration set to None in config)
+    """Generate JWT token"""
     payload = {
         'user_id': user_id,
         'username': username,
         'iat': datetime.utcnow(),
-        # No 'exp' field - tokens never expire
     }
     
-    # VULNERABLE: Using weak secret
     token = jwt.encode(payload, JWT_SECRET, algorithm=Config.JWT_ALGORITHM)
     # Fix: PyJWT 1.6.4 returns bytes, need to decode to string for JSON serialization
     if isinstance(token, bytes):
@@ -28,31 +24,27 @@ def generate_token(user_id, username):
     return token
 
 def verify_token(token):
-    """Verify JWT token - VULNERABLE: Weak validation"""
+    """Verify JWT token"""
     try:
-        # VULNERABLE: No expiration check, weak secret
         payload = jwt.decode(token, JWT_SECRET, algorithms=[Config.JWT_ALGORITHM])
         return payload
     except jwt.InvalidTokenError:
         return None
 
 def get_current_user():
-    """Get current user from token - VULNERABLE: No proper validation"""
+    """Get current user from token"""
     token = None
     
-    # VULNERABLE: Token can be passed in multiple insecure ways
     if 'Authorization' in request.headers:
         auth_header = request.headers['Authorization']
         if auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]
         else:
-            token = auth_header  # VULNERABLE: Accepts token without Bearer prefix
+            token = auth_header
     
-    # Also check query parameter - VULNERABLE
     if not token:
         token = request.args.get('token')
     
-    # Also check form data - VULNERABLE
     if not token:
         token = request.form.get('token')
     
@@ -67,7 +59,7 @@ def get_current_user():
     return user
 
 def require_auth(f):
-    """Decorator to require authentication - VULNERABLE: Weak validation"""
+    """Decorator to require authentication"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = get_current_user()
@@ -77,7 +69,7 @@ def require_auth(f):
     return decorated_function
 
 def require_role(required_role):
-    """Decorator to require specific role - VULNERABLE: Broken access control"""
+    """Decorator to require specific role"""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -85,12 +77,9 @@ def require_role(required_role):
             if not user:
                 return jsonify({'error': 'Authentication required'}), 401
             
-            # VULNERABLE: Role check can be bypassed
-            # Admin can do anything
             if user.role == 'admin':
                 return f(*args, **kwargs)
             
-            # VULNERABLE: Weak role checking
             if required_role == 'project_manager' and user.role in ['admin', 'project_manager']:
                 return f(*args, **kwargs)
             

@@ -1,8 +1,8 @@
 # IAM configuration with intentional security vulnerabilities
-# VULNERABLE: Excessive permissions
-# VULNERABLE: Hardcoded credentials
+# : Excessive permissions
+# : Hardcoded credentials
 
-# VULNERABLE: IAM role with admin access
+# : IAM role with admin access
 resource "aws_iam_role" "projecthub_role" {
   name = "projecthub-role"
 
@@ -20,7 +20,7 @@ resource "aws_iam_role" "projecthub_role" {
   })
 }
 
-# VULNERABLE: IAM policy with excessive permissions (admin access)
+# : IAM policy with excessive permissions (admin access)
 resource "aws_iam_role_policy" "projecthub_policy" {
   name = "projecthub-policy"
   role = aws_iam_role.projecthub_role.id
@@ -30,20 +30,20 @@ resource "aws_iam_role_policy" "projecthub_policy" {
     Statement = [
       {
         Effect = "Allow"
-        Action = "*"  # VULNERABLE: Allows all actions
-        Resource = "*"  # VULNERABLE: Applies to all resources
+        Action = "*"  # : Allows all actions
+        Resource = "*"  # : Applies to all resources
       }
     ]
   })
 }
 
-# VULNERABLE: IAM instance profile
+# : IAM instance profile
 resource "aws_iam_instance_profile" "projecthub_profile" {
   name = "projecthub-profile"
   role = aws_iam_role.projecthub_role.name
 }
 
-# VULNERABLE: IAM user with hardcoded credentials
+# : IAM user with hardcoded credentials
 resource "aws_iam_user" "projecthub_user" {
   name = "projecthub-user"
   
@@ -52,12 +52,12 @@ resource "aws_iam_user" "projecthub_user" {
   }
 }
 
-# VULNERABLE: IAM access key with hardcoded secret
+# : IAM access key with hardcoded secret
 resource "aws_iam_access_key" "projecthub_key" {
   user = aws_iam_user.projecthub_user.name
 }
 
-# VULNERABLE: IAM user policy with admin access
+# : IAM user policy with admin access
 resource "aws_iam_user_policy" "projecthub_user_policy" {
   name = "projecthub-user-policy"
   user = aws_iam_user.projecthub_user.name
@@ -67,7 +67,7 @@ resource "aws_iam_user_policy" "projecthub_user_policy" {
     Statement = [
       {
         Effect = "Allow"
-        Action = "*"  # VULNERABLE: Admin access
+        Action = "*"  # : Admin access
         Resource = "*"
       }
     ]

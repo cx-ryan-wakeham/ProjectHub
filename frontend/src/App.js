@@ -15,7 +15,6 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // VULNERABLE: Token stored in localStorage (XSS risk)
     const token = localStorage.getItem('token');
     if (token) {
       api.setToken(token);
@@ -32,7 +31,6 @@ function App() {
   }, []);
 
   const handleLogin = (token, userData) => {
-    // VULNERABLE: Storing token in localStorage (XSS risk)
     localStorage.setItem('token', token);
     api.setToken(token);
     setUser(userData);

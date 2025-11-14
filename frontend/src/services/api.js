@@ -10,8 +10,6 @@ const api = axios.create({
   },
 });
 
-// VULNERABLE: No CSRF protection
-// VULNERABLE: Token stored in localStorage (XSS risk)
 
 api.setToken = (token) => {
   if (token) {
@@ -21,10 +19,9 @@ api.setToken = (token) => {
   }
 };
 
-// Request interceptor - VULNERABLE: Logs sensitive data
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // VULNERABLE: Could log sensitive information
     console.log('API Request:', config);
     return config;
   },
@@ -40,7 +37,6 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // VULNERABLE: Token in localStorage
       localStorage.removeItem('token');
       window.location.href = '/';
     }

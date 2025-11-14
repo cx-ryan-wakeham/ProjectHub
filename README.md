@@ -209,37 +209,22 @@ ProjectHub/
 
 ## Security Vulnerabilities
 
-This application intentionally contains numerous security vulnerabilities. See [SECURITY.md](SECURITY.md) for a complete list.
+This application intentionally contains numerous security vulnerabilities for educational and security testing purposes. The application demonstrates common security flaws found in real-world applications.
 
-### OWASP Top 10
+### High-Level Summary
 
-1. **A1: Injection** - SQL injection in search/filter endpoints
-2. **A2: Broken Authentication** - Weak JWT, no MFA, session fixation
-3. **A3: Sensitive Data Exposure** - API responses expose passwords/tokens
-4. **A4: XXE** - XML External Entity vulnerabilities in file uploads
-5. **A5: Broken Access Control** - IDOR, misconfigured RBAC
-6. **A6: Security Misconfiguration** - Outdated dependencies, Docker images
-7. **A7: XSS** - Stored, reflected, and DOM-based XSS
-8. **A8: Insecure Deserialization** - Pickle, JSON, YAML deserialization
-9. **A9: Known Vulnerabilities** - Outdated Flask, React, Docker images
-10. **A10: Insufficient Logging** - Log injection, sensitive data in logs
+The application includes vulnerabilities across all OWASP Top 10 categories:
 
-### Additional Vulnerabilities
-
-- Hardcoded secrets in configuration files
-- Insecure file uploads (no validation, dangerous file types: php, exe, sh, etc.)
-- Path traversal vulnerabilities
-- Misconfigured cloud resources (S3 public access, excessive IAM permissions)
-- Hardcoded credentials in CI/CD pipelines
-- No Content Security Policy
-- Insecure token storage (localStorage - XSS risk)
-- No CSRF protection
-- Case-insensitive authentication (allows enumeration)
-- Weak password hashing (MD5)
-- Log injection vulnerabilities
-- Sensitive data in logs (passwords, API keys, JWT secrets)
-- Broken access control in user management (any user can create/update/delete users)
-- No input validation or sanitization
+- **Injection vulnerabilities** (SQL injection, command injection, XXE)
+- **Broken authentication and session management** (weak secrets, no expiration, case-insensitive login)
+- **Sensitive data exposure** (passwords, API keys, tokens exposed in API responses and logs)
+- **Broken access control** (IDOR, misconfigured RBAC, unauthorized access)
+- **Security misconfiguration** (outdated dependencies, insecure defaults, missing security headers)
+- **Cross-site scripting (XSS)** (stored, reflected, DOM-based)
+- **Insecure deserialization** (pickle, YAML, JSON)
+- **Using components with known vulnerabilities** (outdated packages with CVEs)
+- **Insufficient logging and monitoring** (log injection, sensitive data in logs)
+- **Additional security weaknesses** (hardcoded secrets, insecure file uploads, path traversal, no CSRF protection, weak password hashing)
 
 ## Testing the Vulnerabilities
 

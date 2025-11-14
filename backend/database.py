@@ -467,7 +467,6 @@ def seed_data(app):
             print(f"  - Tasks: {Task.query.count()}")
             print(f"  - Comments: {Comment.query.count()}")
             print(f"  - Messages: {Message.query.count()}")
-            print(f"  - Notifications: {Notification.query.count()}")
             print(f"  - Documents: {Document.query.count()}")
             print(f"\nTest user credentials (all use password: password123):")
             for user in test_users:
@@ -498,7 +497,7 @@ def init_db(app):
                 role='admin'
             )
             admin.set_password(admin_password)
-            admin.api_key = "admin_api_key_12345"  # VULNERABLE: Hardcoded API key
+            admin.api_key = "admin_api_key_12345"
             db.session.add(admin)
             db.session.commit()
             print(f"Created admin user: {Config.ADMIN_EMAIL} / {admin_password}")

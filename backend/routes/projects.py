@@ -1,4 +1,4 @@
-# Project management routes with intentional security vulnerabilities
+# Project management routes
 from flask import Blueprint, request, jsonify
 import sys
 import os
@@ -6,32 +6,32 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import Project, User, db
 from auth import require_auth, get_current_user
 from utils.logger import log_user_action
-from sqlalchemy import text  # VULNERABLE: For raw SQL queries
+from sqlalchemy import text
 
 bp = Blueprint('projects', __name__)
 
 @bp.route('', methods=['GET'])
 @require_auth
 def get_projects():
-    """Get all projects - VULNERABLE: SQL Injection, IDOR, broken access control"""
+    """Get all projects - : SQL Injection, IDOR, broken access control"""
     user = get_current_user()
     
-    # VULNERABLE: SQL Injection in search parameter
+    # : SQL Injection in search parameter
     search = request.args.get('search', '')
     status_filter = request.args.get('status', '')
     
-    # VULNERABLE: Raw SQL query with user input (SQL Injection)
+    # : Raw SQL query with user input (SQL Injection)
     if search:
-        # VULNERABLE: Direct string interpolation in SQL
+        # : Direct string interpolation in SQL
         query = f"SELECT * FROM projects WHERE name LIKE '%{search}%' OR description LIKE '%{search}%'"
         result = db.session.execute(text(query))
         projects = [dict(row) for row in result]
     else:
-        # VULNERABLE: Broken access control - users can see all projects
+        # : Broken access control - users can see all projects
         # Should filter by user's projects or role
         projects = Project.query.all()
     
-    # VULNERABLE: Exposes all projects regardless of ownership
+    # : Exposes all projects regardless of ownership
     return jsonify({
         'projects': [p.to_dict() for p in projects]
     })
@@ -39,16 +39,16 @@ def get_projects():
 @bp.route('/<int:project_id>', methods=['GET'])
 @require_auth
 def get_project(project_id):
-    """Get project by ID - VULNERABLE: IDOR, broken access control"""
+    """Get project by ID - : IDOR, broken access control"""
     user = get_current_user()
     
-    # VULNERABLE: IDOR - no check if user has access to this project
+    # : IDOR - no check if user has access to this project
     project = Project.query.get(project_id)
     
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # VULNERABLE: Broken access control - allows access to private projects
+    # : Broken access control - allows access to private projects
     # Should check: project.owner_id == user.id or project.is_public or user.role == 'admin'
     
     log_user_action(user.id, 'view_project', f"Project ID: {project_id}")
@@ -60,7 +60,7 @@ def get_project(project_id):
 @bp.route('', methods=['POST'])
 @require_auth
 def create_project():
-    """Create project - VULNERABLE: No input validation, XSS"""
+    """Create project - : No input validation, XSS"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -71,12 +71,12 @@ def create_project():
     if not name:
         return jsonify({'error': 'Project name required'}), 400
     
-    # VULNERABLE: No input sanitization (XSS in description)
-    # VULNERABLE: No validation of name/description length
+    # : No input sanitization (XSS in description)
+    # : No validation of name/description length
     
     project = Project(
         name=name,
-        description=description,  # VULNERABLE: Stored without sanitization
+        description=description,  # : Stored without sanitization
         owner_id=user.id,
         is_public=is_public
     )
@@ -94,7 +94,7 @@ def create_project():
 @bp.route('/<int:project_id>', methods=['PUT'])
 @require_auth
 def update_project(project_id):
-    """Update project - VULNERABLE: Broken access control, IDOR, no input validation"""
+    """Update project - : Broken access control, IDOR, no input validation"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -103,7 +103,7 @@ def update_project(project_id):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # VULNERABLE: Broken access control - non-owners can modify projects
+    # : Broken access control - non-owners can modify projects
     # Should check: project.owner_id == user.id or user.role == 'admin'
     # Currently allows any authenticated user to modify any project
     
@@ -114,7 +114,7 @@ def update_project(project_id):
     if name:
         project.name = name
     if description is not None:
-        # VULNERABLE: No input sanitization (XSS)
+        # : No input sanitization (XSS)
         project.description = description
     if is_public is not None:
         project.is_public = is_public
@@ -131,7 +131,7 @@ def update_project(project_id):
 @bp.route('/<int:project_id>', methods=['DELETE'])
 @require_auth
 def delete_project(project_id):
-    """Delete project - VULNERABLE: Broken access control, IDOR"""
+    """Delete project - : Broken access control, IDOR"""
     user = get_current_user()
     
     project = Project.query.get(project_id)
@@ -139,7 +139,7 @@ def delete_project(project_id):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # VULNERABLE: Broken access control - non-owners can delete projects
+    # : Broken access control - non-owners can delete projects
     # Should check: project.owner_id == user.id or user.role == 'admin'
     # Currently allows any authenticated user to delete any project
     
@@ -153,7 +153,7 @@ def delete_project(project_id):
 @bp.route('/<int:project_id>/dashboard', methods=['GET'])
 @require_auth
 def get_project_dashboard(project_id):
-    """Get project dashboard - VULNERABLE: IDOR, broken access control, sensitive data exposure"""
+    """Get project dashboard - : IDOR, broken access control, sensitive data exposure"""
     user = get_current_user()
     
     project = Project.query.get(project_id)
@@ -161,15 +161,15 @@ def get_project_dashboard(project_id):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # VULNERABLE: IDOR - no access control check
-    # VULNERABLE: Exposes sensitive project data to unauthorized users
+    # : IDOR - no access control check
+    # : Exposes sensitive project data to unauthorized users
     
     from models import Task, Document
     
     tasks = Task.query.filter_by(project_id=project_id).all()
     documents = Document.query.filter_by(project_id=project_id).all()
     
-    # VULNERABLE: Exposes all tasks and documents regardless of user permissions
+    # : Exposes all tasks and documents regardless of user permissions
     return jsonify({
         'project': project.to_dict(),
         'tasks': [t.to_dict() for t in tasks],
