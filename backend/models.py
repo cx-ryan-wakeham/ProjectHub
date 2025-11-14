@@ -1,7 +1,7 @@
 # Database models
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-import hashlib  # Using weak MD5 hashing
+import hashlib
 
 db = SQLAlchemy()
 

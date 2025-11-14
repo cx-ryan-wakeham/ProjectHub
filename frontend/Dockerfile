@@ -1,4 +1,3 @@
-# Frontend Dockerfile with intentional security vulnerabilities
 FROM node:10
 
 WORKDIR /app

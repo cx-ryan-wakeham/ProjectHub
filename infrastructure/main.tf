@@ -1,36 +1,27 @@
-# Terraform main configuration with intentional security vulnerabilities
-
 terraform {
   required_version = ">= 0.12"
   
-  # : Backend configuration may expose secrets
   backend "s3" {
     bucket = "projecthub-terraform-state"
     key    = "terraform.tfstate"
     region = "us-east-1"
-    # : No encryption, no access control
   }
 }
 
-# : Hardcoded AWS credentials
 provider "aws" {
   region     = var.aws_region
   access_key = var.aws_access_key
   secret_key = var.aws_secret_key
 }
 
-# : EC2 instance with excessive permissions
 resource "aws_instance" "projecthub_app" {
-  ami           = "ami-0c55b159cbfafe1f0"  # : Outdated AMI
+  ami           = "ami-0c55b159cbfafe1f0"
   instance_type = "t2.micro"
   
-  # : Security group allows all traffic
   security_groups = [aws_security_group.projecthub_sg.name]
   
-  # : IAM instance profile with excessive permissions
   iam_instance_profile = aws_iam_instance_profile.projecthub_profile.name
   
-  # : User data with hardcoded secrets
   user_data = <<-EOF
     #!/bin/bash
     export DATABASE_URL="postgresql://projecthub:${var.db_password}@${aws_db_instance.projecthub_db.endpoint}/projecthub"
@@ -45,12 +36,10 @@ resource "aws_instance" "projecthub_app" {
   }
 }
 
-# : Security group open to the world
 resource "aws_security_group" "projecthub_sg" {
   name        = "projecthub-security-group"
   description = "Security group for ProjectHub"
 
-  # : Allows all inbound traffic
   ingress {
     from_port   = 0
     to_port     = 65535
@@ -58,7 +47,6 @@ resource "aws_security_group" "projecthub_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # : Allows all outbound traffic
   egress {
     from_port   = 0
     to_port     = 65535
@@ -71,29 +59,24 @@ resource "aws_security_group" "projecthub_sg" {
   }
 }
 
-# : RDS instance with weak configuration
 resource "aws_db_instance" "projecthub_db" {
   identifier = "projecthub-db"
   engine     = "postgres"
-  engine_version = "10.0"  # : Outdated PostgreSQL version
+  engine_version = "10.0"
   
   instance_class = "db.t2.micro"
   allocated_storage = 20
   
   db_name  = "projecthub"
   username = "projecthub"
-  password = var.db_password  # : Weak password
+  password = var.db_password
   
-  # : Publicly accessible database
   publicly_accessible = true
   
-  # : No encryption at rest
   storage_encrypted = false
   
-  # : No backup retention
   backup_retention_period = 0
   
-  # : No deletion protection
   deletion_protection = false
   
   tags = {

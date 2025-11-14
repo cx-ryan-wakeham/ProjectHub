@@ -1,6 +1,3 @@
-# Outdated and vulnerable dependencies for security testing demonstration
-# WARNING: These versions contain known CVEs
-
 Flask==1.0.0
 Flask-SQLAlchemy==2.3.2
 Flask-CORS==3.0.7

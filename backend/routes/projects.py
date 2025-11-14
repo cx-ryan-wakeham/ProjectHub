@@ -13,25 +13,19 @@ bp = Blueprint('projects', __name__)
 @bp.route('', methods=['GET'])
 @require_auth
 def get_projects():
-    """Get all projects - : SQL Injection, IDOR, broken access control"""
+    """Get all projects"""
     user = get_current_user()
     
-    # : SQL Injection in search parameter
     search = request.args.get('search', '')
     status_filter = request.args.get('status', '')
     
-    # : Raw SQL query with user input (SQL Injection)
     if search:
-        # : Direct string interpolation in SQL
         query = f"SELECT * FROM projects WHERE name LIKE '%{search}%' OR description LIKE '%{search}%'"
         result = db.session.execute(text(query))
         projects = [dict(row) for row in result]
     else:
-        # : Broken access control - users can see all projects
-        # Should filter by user's projects or role
         projects = Project.query.all()
     
-    # : Exposes all projects regardless of ownership
     return jsonify({
         'projects': [p.to_dict() for p in projects]
     })
@@ -39,17 +33,13 @@ def get_projects():
 @bp.route('/<int:project_id>', methods=['GET'])
 @require_auth
 def get_project(project_id):
-    """Get project by ID - : IDOR, broken access control"""
+    """Get project by ID"""
     user = get_current_user()
     
-    # : IDOR - no check if user has access to this project
     project = Project.query.get(project_id)
     
     if not project:
         return jsonify({'error': 'Project not found'}), 404
-    
-    # : Broken access control - allows access to private projects
-    # Should check: project.owner_id == user.id or project.is_public or user.role == 'admin'
     
     log_user_action(user.id, 'view_project', f"Project ID: {project_id}")
     
@@ -60,7 +50,7 @@ def get_project(project_id):
 @bp.route('', methods=['POST'])
 @require_auth
 def create_project():
-    """Create project - : No input validation, XSS"""
+    """Create project"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -71,12 +61,9 @@ def create_project():
     if not name:
         return jsonify({'error': 'Project name required'}), 400
     
-    # : No input sanitization (XSS in description)
-    # : No validation of name/description length
-    
     project = Project(
         name=name,
-        description=description,  # : Stored without sanitization
+        description=description,
         owner_id=user.id,
         is_public=is_public
     )
@@ -94,7 +81,7 @@ def create_project():
 @bp.route('/<int:project_id>', methods=['PUT'])
 @require_auth
 def update_project(project_id):
-    """Update project - : Broken access control, IDOR, no input validation"""
+    """Update project"""
     user = get_current_user()
     data = request.get_json() or request.form
     
@@ -103,10 +90,6 @@ def update_project(project_id):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # : Broken access control - non-owners can modify projects
-    # Should check: project.owner_id == user.id or user.role == 'admin'
-    # Currently allows any authenticated user to modify any project
-    
     name = data.get('name')
     description = data.get('description')
     is_public = data.get('is_public')
@@ -114,7 +97,6 @@ def update_project(project_id):
     if name:
         project.name = name
     if description is not None:
-        # : No input sanitization (XSS)
         project.description = description
     if is_public is not None:
         project.is_public = is_public
@@ -131,17 +113,13 @@ def update_project(project_id):
 @bp.route('/<int:project_id>', methods=['DELETE'])
 @require_auth
 def delete_project(project_id):
-    """Delete project - : Broken access control, IDOR"""
+    """Delete project"""
     user = get_current_user()
     
     project = Project.query.get(project_id)
     
     if not project:
         return jsonify({'error': 'Project not found'}), 404
-    
-    # : Broken access control - non-owners can delete projects
-    # Should check: project.owner_id == user.id or user.role == 'admin'
-    # Currently allows any authenticated user to delete any project
     
     db.session.delete(project)
     db.session.commit()
@@ -153,7 +131,7 @@ def delete_project(project_id):
 @bp.route('/<int:project_id>/dashboard', methods=['GET'])
 @require_auth
 def get_project_dashboard(project_id):
-    """Get project dashboard - : IDOR, broken access control, sensitive data exposure"""
+    """Get project dashboard"""
     user = get_current_user()
     
     project = Project.query.get(project_id)
@@ -161,15 +139,11 @@ def get_project_dashboard(project_id):
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
-    # : IDOR - no access control check
-    # : Exposes sensitive project data to unauthorized users
-    
     from models import Task, Document
     
     tasks = Task.query.filter_by(project_id=project_id).all()
     documents = Document.query.filter_by(project_id=project_id).all()
     
-    # : Exposes all tasks and documents regardless of user permissions
     return jsonify({
         'project': project.to_dict(),
         'tasks': [t.to_dict() for t in tasks],

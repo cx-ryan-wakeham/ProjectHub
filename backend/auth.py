@@ -18,7 +18,6 @@ def generate_token(user_id, username):
     }
     
     token = jwt.encode(payload, JWT_SECRET, algorithm=Config.JWT_ALGORITHM)
-    # Fix: PyJWT 1.6.4 returns bytes, need to decode to string for JSON serialization
     if isinstance(token, bytes):
         token = token.decode('utf-8')
     return token

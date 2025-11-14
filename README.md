@@ -20,7 +20,7 @@ ProjectHub is designed to help security professionals, developers, and students 
 
 ## Technology Stack
 
-- **Backend**: Flask 1.0.0 (intentionally outdated)
+- **Backend**: Flask 1.0.0
 - **Frontend**: React 16.8.6
 - **Database**: PostgreSQL
 - **Containerization**: Docker
