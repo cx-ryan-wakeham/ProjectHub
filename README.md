@@ -272,15 +272,22 @@ The application includes vulnerabilities across all OWASP Top 10 categories:
 
 This application uses older patterns and APIs that will break when upgrading dependencies. The following table summarizes the breaking changes:
 
-| Pattern | Breaking Version | Files Affected | Instances | Migration Complexity |
-|---------|------------------|----------------|-----------|---------------------|
-| `Model.query` (SQLAlchemy) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
-| `datetime.utcnow()` (Python) | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
-| `_request_ctx_stack` (Flask) | Flask 2.0+ | 4+ files | 10+ | **MEDIUM** - Replace with `g` object |
-| `@contextfilter` (Jinja2) | Jinja2 3.0+ | 2 files | 7 filters | **MEDIUM** - Replace with `@pass_context` |
-| `yaml.load()` without Loader (PyYAML) | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
+| Pattern | Current Version | Breaking Version | Files Affected | Instances | Migration Complexity |
+|---------|----------------|------------------|----------------|-----------|---------------------|
+| `Model.query` (SQLAlchemy) | SQLAlchemy 1.4.x (pinned, via Flask-SQLAlchemy 2.3.2) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
+| `datetime.utcnow()` (Python) | Python 3.6 (Ubuntu 18.04 default) | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
+| `_request_ctx_stack` (Flask) | Flask 1.1.4 | Flask 2.0+ | 4+ files | 10+ | **MEDIUM** - Replace with `g` object |
+| `@contextfilter` (Jinja2) | Jinja2 2.11.3 | Jinja2 3.0+ | 2 files | 7 filters | **MEDIUM** - Replace with `@pass_context` |
+| `yaml.load()` without Loader (PyYAML) | PyYAML 3.13 | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
 
-**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing.
+**Version Details:**
+- **SQLAlchemy**: SQLAlchemy is pinned to `<2.0,>=1.4.0` in requirements.txt to work with Flask-SQLAlchemy 2.3.2. The `Model.query` pattern works in SQLAlchemy 1.4.x but is **removed** in SQLAlchemy 2.0+. Upgrading to SQLAlchemy 2.0+ will break all `Model.query` usage (100+ instances). This pattern must be migrated to `db.session.query(Model)` or `db.session.get(Model, id)` before upgrading.
+- **Python**: Ubuntu 18.04 includes Python 3.6. `datetime.utcnow()` is deprecated in Python 3.12 and will be removed in future versions.
+- **Flask**: Version 1.1.4 uses `_request_ctx_stack` which is removed in Flask 2.0+ (replaced with `g` object).
+- **Jinja2**: Version 2.11.3 uses `@contextfilter` which is replaced with `@pass_context` in Jinja2 3.0+.
+- **PyYAML**: Version 3.13 allows `yaml.load()` without Loader (with security warnings). PyYAML 6.0+ removes this unsafe default.
+
+**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing. The current versions work correctly, but upgrading to the breaking versions will require refactoring.
 
 ## API Endpoints
 
