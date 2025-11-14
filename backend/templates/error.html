@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error {{ error_code }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .error-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+        }
+        .error-code {
+            font-size: 72px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        .error-message {
+            font-size: 24px;
+            color: #333;
+            margin: 20px 0;
+        }
+        .error-details {
+            color: #666;
+            margin: 20px 0;
+        }
+        .request-id {
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+        }
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1 class="error-code">{{ error_code }}</h1>
+        <h2 class="error-message">{{ error_message }}</h2>
+        {% if error_details %}
+        <p class="error-details">{{ error_details }}</p>
+        {% endif %}
+        <p><a href="/">Return to Home</a></p>
+        <p class="request-id">Request ID: {{ request_id|request_id_filter }}</p>
+        <p class="request-id">Time: {{ "now"|format_datetime }}</p>
+    </div>
+</body>
+</html>
+

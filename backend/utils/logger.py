@@ -2,6 +2,7 @@
 import logging
 import sys
 from config import Config
+from utils.request_context import request_id, get_request_context, get_request_duration
 
 def setup_logger(app):
     """Setup logging"""
@@ -48,7 +49,12 @@ def log_user_action(user_id, action, details=None):
     """Log user actions"""
     logger = logging.getLogger('projecthub')
     
-    log_message = f"User {user_id} performed action: {action}"
+    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    req_id = request_id if request_id else "N/A"
+    duration = get_request_duration()
+    duration_str = f" ({duration:.3f}s)" if duration else ""
+    
+    log_message = f"[{req_id}] User {user_id} performed action: {action}{duration_str}"
     if details:
         log_message += f" - Details: {details}"
     
@@ -58,12 +64,22 @@ def log_login_attempt(username, password, success=False):
     """Log login attempts"""
     logger = logging.getLogger('projecthub')
     
+    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    req_id = request_id if request_id else "N/A"
+    ctx = get_request_context()
+    ip_address = ctx.request.remote_addr if ctx and hasattr(ctx, 'request') and ctx.request else "unknown"
+    
     status = "SUCCESS" if success else "FAILED"
-    logger.warning(f"Login attempt - Username: {username}, Password: {password}, Status: {status}")
+    logger.warning(f"[{req_id}] Login attempt from {ip_address} - Username: {username}, Password: {password}, Status: {status}")
 
 def log_api_request(user_id, endpoint, request_data):
     """Log API requests"""
     logger = logging.getLogger('projecthub')
     
-    logger.info(f"API Request - User: {user_id}, Endpoint: {endpoint}, Data: {request_data}")
+    # Using deprecated request_id LocalProxy from _request_ctx_stack
+    req_id = request_id if request_id else "N/A"
+    duration = get_request_duration()
+    duration_str = f" ({duration:.3f}s)" if duration else ""
+    
+    logger.info(f"[{req_id}] API Request{duration_str} - User: {user_id}, Endpoint: {endpoint}, Data: {request_data}")
 

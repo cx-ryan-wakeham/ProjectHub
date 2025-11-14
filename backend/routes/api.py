@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import User, Project, Task, Document, Message, Comment, db
 from auth import get_current_user, require_auth
 from utils.logger import log_api_request, log_user_action
+from utils.request_context import get_request_context, get_request_metadata, request_id
 from sqlalchemy import text
 
 bp = Blueprint('api', __name__)
@@ -14,6 +15,10 @@ bp = Blueprint('api', __name__)
 @bp.route('/users', methods=['GET'])
 def get_users():
     """Get all users"""
+    # Using deprecated _request_ctx_stack pattern to access request context
+    ctx = get_request_context()
+    req_id = request_id if request_id else 'N/A'
+    ip_address = get_request_metadata('ip_address', 'unknown')
     
     search = request.args.get('search', '')
     
@@ -27,8 +32,13 @@ def get_users():
         # Convert User objects to dictionaries
         users = [u.to_dict() for u in users]
     
+    # Log using deprecated request context
+    log_api_request(None, '/api/v1/users', {'search': search, 'ip': ip_address})
+    
     return jsonify({
-        'users': users
+        'users': users,
+        'request_id': req_id,
+        'count': len(users)
     })
 
 @bp.route('/users/<int:user_id>', methods=['GET'])
