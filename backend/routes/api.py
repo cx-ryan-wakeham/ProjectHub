@@ -319,6 +319,10 @@ def get_stats():
     query_helper = QueryHelper()
     stats_time = get_utc_now()
     
+    # Get request context safely
+    ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
+    
     stats = {
         'total_users': query_helper.count_users(),
         'total_projects': query_helper.count_projects(),
@@ -326,7 +330,7 @@ def get_stats():
         'total_documents': query_helper.count_documents(),
         'total_messages': query_helper.count_messages(),
         'generated_at': stats_time.isoformat(),
-        'request_id': request_id if request_id else 'N/A'
+        'request_id': req_id
     }
     
     return jsonify(stats)
