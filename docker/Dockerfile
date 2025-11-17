@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     libpq-dev \
     netcat \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -30,14 +31,13 @@ RUN pip3 install --upgrade pip setuptools wheel && \
 # Copy application code
 COPY backend/ .
 
-RUN mkdir -p /app/uploads /app/logs && \
+# Fix line endings and permissions
+RUN dos2unix /app/*.sh 2>/dev/null || true && \
+    dos2unix /app/docker-entrypoint.sh && \
+    chmod +x /app/docker-entrypoint.sh && \
+    mkdir -p /app/uploads /app/logs && \
     chmod 777 /app/uploads && \
     chmod 777 /app/logs
-
-# Copy and setup entrypoint
-COPY backend/docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh && \
-    sed -i 's/\r$//' /app/docker-entrypoint.sh
 
 # Use bash explicitly to handle volume mount permission issues
 CMD ["/bin/bash", "/app/docker-entrypoint.sh"]

@@ -9,7 +9,7 @@ ProjectHub is a project management web application that demonstrates common secu
 - **User Management**: Registration, authentication, role-based access control (admin, project_manager, team_member)
 - **Project Management**: Create, update, delete projects with descriptions and status tracking
 - **Task Management**: Assign tasks to users, track status, add comments
-- **Document Management**: Upload documents with metadata extraction (supports XML, YAML, Pickle, images)
+- **Document Management**: Upload documents with metadata extraction (supports XML, YAML, Pickle, and image files with EXIF data extraction via Pillow)
 - **Messaging**: Send and receive messages between users
 - **Analytics**: Application statistics and search functionality
 - **Admin Dashboard**: HTML-based admin interface for viewing system data
@@ -38,7 +38,8 @@ ProjectHub is designed to help security professionals, developers, and students 
 - **Backend**: Flask 1.1.4
 - **Frontend**: React 16.8.6
 - **Database**: PostgreSQL 10
-- **ORM**: SQLAlchemy (via Flask-SQLAlchemy 2.3.2)
+- **ORM**: SQLAlchemy 1.4.0 (via Flask-SQLAlchemy 2.3.2)
+- **Image Processing**: Pillow 5.2.0
 - **Authentication**: JWT (PyJWT 1.6.4, Flask-JWT-Extended 3.13.1)
 - **Templates**: Jinja2 2.11.3
 - **Containerization**: Docker & Docker Compose
@@ -264,30 +265,72 @@ The application includes vulnerabilities across all OWASP Top 10 categories:
 - **Security misconfiguration** (outdated dependencies, insecure defaults, missing security headers)
 - **Cross-site scripting (XSS)** (stored, reflected, DOM-based)
 - **Insecure deserialization** (pickle, YAML, JSON)
-- **Using components with known vulnerabilities** (outdated packages with CVEs)
+- **Using components with known vulnerabilities** (outdated packages with CVEs, notably Pillow 5.2.0 with 15+ critical vulnerabilities)
 - **Insufficient logging and monitoring** (log injection, sensitive data in logs)
 - **Additional security weaknesses** (hardcoded secrets, insecure file uploads, path traversal, no CSRF protection, weak password hashing)
 
 ## Breaking Changes on Dependency Upgrades
 
-This application uses older patterns and APIs that will break when upgrading dependencies. The following table summarizes the breaking changes:
+This application uses older patterns and APIs that will break when upgrading dependencies. The codebase is designed to force comprehensive refactoring when students attempt to fix critical security vulnerabilities.
 
 | Pattern | Current Version | Breaking Version | Files Affected | Instances | Migration Complexity |
 |---------|----------------|------------------|----------------|-----------|---------------------|
-| `Model.query` (SQLAlchemy) | SQLAlchemy 1.4.x (pinned, via Flask-SQLAlchemy 2.3.2) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
-| `datetime.utcnow()` (Python) | Python 3.6 (Ubuntu 18.04 default) | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
+| **Pillow (Security Driver)** | **Pillow 5.2.0** | **Pillow 10.0+** | **requirements.txt** | **15+ CVEs** | **CRITICAL** - Triggers entire upgrade cascade |
+| `Model.query` (SQLAlchemy) | SQLAlchemy 1.4.0 (via Flask-SQLAlchemy 2.3.2) | SQLAlchemy 2.0+ | 10+ files | 100+ | **SIGNIFICANT** - Replace with `db.session.query(Model)` |
+| `datetime.utcnow()` (Python) | Python 3.7 | Python 3.12+ | 8+ files | 18+ | **HIGH** - Replace with `datetime.now(timezone.utc)` |
 | `_request_ctx_stack` (Flask) | Flask 1.1.4 | Flask 2.0+ | 4+ files | 10+ | **MEDIUM** - Replace with `g` object |
 | `@contextfilter` (Jinja2) | Jinja2 2.11.3 | Jinja2 3.0+ | 2 files | 7 filters | **MEDIUM** - Replace with `@pass_context` |
 | `yaml.load()` without Loader (PyYAML) | PyYAML 3.13 | PyYAML 6.0+ | 1 file | 1 | **LOW** - Add `Loader=yaml.SafeLoader` |
 
+**Upgrade Cascade**: Pillow CVEs → Python 3.8+ required → Python 3.12 chosen → datetime.utcnow() breaks + other dependencies forced to upgrade
+
+### The Pillow Forcing Mechanism
+
+**Why Pillow?**  
+Pillow 5.2.0 is used throughout the application for image processing (see `backend/utils/file_handler.py`) to extract metadata, EXIF data, and validate uploaded images. This version contains **15+ critical CVEs** including buffer overflows, out-of-bounds reads/writes, and potential RCE vulnerabilities. These will be flagged as HIGH/CRITICAL by any security scanner (Snyk, Checkmarx, Dependabot, etc.), creating unavoidable pressure to upgrade.
+
+**Critical CVEs in Pillow 5.2.0:**
+- CVE-2019-16865 (DoS vulnerability)
+- CVE-2020-5310 (Buffer overflow)
+- CVE-2020-5311 (Out-of-bounds write, RCE potential)
+- CVE-2020-5312 (Out-of-bounds read)
+- CVE-2020-5313 (Out-of-bounds read)
+- CVE-2020-10177, CVE-2020-10378, CVE-2020-10994 (Memory corruption)
+- Multiple additional critical vulnerabilities through 2020-2023
+
+**The Upgrade Cascade:**
+
+```
+Pillow 5.2.0 (current) → 15+ critical CVEs flagged by security scanners
+    ↓
+Students must upgrade to Pillow 10.0+ to fix CVEs
+    ↓
+Pillow 10.0+ requires Python 3.8+ (drops Python 3.7 support)
+    ↓
+Students upgrade Python 3.7 → Python 3.12 (latest stable)
+    ↓
+Python 3.12 deprecates datetime.utcnow() (18+ instances break)
+    ↓
+Other dependencies may need upgrades for Python 3.12 compatibility
+    ↓
+Students must refactor deprecated patterns across the codebase
+```
+
+**Why This Works:**
+1. **Real Security Pressure**: Unlike theoretical vulnerabilities, Pillow CVEs are severe and will be flagged by security teams
+2. **Compliance Requirements**: Organizations mandate fixing critical CVEs, making this unavoidable
+3. **Realistic Scenario**: Mirrors production situations where security debt forces technical debt remediation
+4. **Educational Value**: Teaches students about dependency cascades and the cost of technical debt
+
 **Version Details:**
+- **Pillow**: Version 5.2.0 has 15+ critical CVEs. Upgrading to Pillow 10.0+ fixes CVEs but requires Python 3.8+, forcing a Python upgrade that breaks `datetime.utcnow()` and potentially other patterns.
 - **SQLAlchemy**: SQLAlchemy is pinned to `<2.0,>=1.4.0` in requirements.txt to work with Flask-SQLAlchemy 2.3.2. The `Model.query` pattern works in SQLAlchemy 1.4.x but is **removed** in SQLAlchemy 2.0+. Upgrading to SQLAlchemy 2.0+ will break all `Model.query` usage (100+ instances). This pattern must be migrated to `db.session.query(Model)` or `db.session.get(Model, id)` before upgrading.
-- **Python**: Ubuntu 18.04 includes Python 3.6. `datetime.utcnow()` is deprecated in Python 3.12 and will be removed in future versions.
+- **Python**: Current Docker image uses Python 3.7. `datetime.utcnow()` is deprecated in Python 3.12 and will be removed in future versions. Upgrading Python to fix Pillow compatibility will break 18+ instances.
 - **Flask**: Version 1.1.4 uses `_request_ctx_stack` which is removed in Flask 2.0+ (replaced with `g` object).
 - **Jinja2**: Version 2.11.3 uses `@contextfilter` which is replaced with `@pass_context` in Jinja2 3.0+.
 - **PyYAML**: Version 3.13 allows `yaml.load()` without Loader (with security warnings). PyYAML 6.0+ removes this unsafe default.
 
-**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios for upgrade testing. The current versions work correctly, but upgrading to the breaking versions will require refactoring.
+**Note**: These patterns are intentionally used throughout the codebase to create realistic technical debt scenarios. The current versions work correctly, but security vulnerabilities in Pillow create unavoidable pressure to upgrade, triggering cascading breaking changes that require significant refactoring.
 
 ## API Endpoints
 
