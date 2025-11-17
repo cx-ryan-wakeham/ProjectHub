@@ -1,59 +1,74 @@
 # ProjectHub - Quick Start Guide
 
+## Docker Compose Version Note
+
+This guide uses **Docker Compose V2** syntax (`docker compose` - no hyphen), which is the modern standard included with Docker Desktop and recent Docker installations.
+
+**If you have Docker Compose V1** (older standalone installation), replace `docker compose` with `docker-compose` (with hyphen) in all commands.
+
+**Check your version:**
+```bash
+# V2 (recommended)
+docker compose version
+
+# V1 (legacy)
+docker-compose --version
+```
+
 ## Key Commands
 
 ### Build
 
 ```bash
 # Build all containers
-docker-compose -f docker/docker-compose.yml build
+docker compose -f docker/docker-compose.yml build
 
 # Clean build (no cache)
-docker-compose -f docker/docker-compose.yml build --no-cache
+docker compose -f docker/docker-compose.yml build --no-cache
 ```
 
 ### Start
 
 ```bash
 # Start all services in detached mode
-docker-compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d
 
 # Build and start in one command
-docker-compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 ### Shutdown
 
 ```bash
 # Stop services (keeps containers)
-docker-compose -f docker/docker-compose.yml stop
+docker compose -f docker/docker-compose.yml stop
 
 # Stop and remove containers
-docker-compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml down
 
 # Stop and remove containers + volumes (⚠️ deletes database)
-docker-compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml down -v
 ```
 
 ### Useful Commands
 
 ```bash
 # View logs (all services)
-docker-compose -f docker/docker-compose.yml logs -f
+docker compose -f docker/docker-compose.yml logs -f
 
 # View logs (specific service)
-docker-compose -f docker/docker-compose.yml logs -f backend
-docker-compose -f docker/docker-compose.yml logs -f frontend
+docker compose -f docker/docker-compose.yml logs -f backend
+docker compose -f docker/docker-compose.yml logs -f frontend
 
 # Check service status
-docker-compose -f docker/docker-compose.yml ps
+docker compose -f docker/docker-compose.yml ps
 
 # Restart a service
-docker-compose -f docker/docker-compose.yml restart backend
-docker-compose -f docker/docker-compose.yml restart frontend
+docker compose -f docker/docker-compose.yml restart backend
+docker compose -f docker/docker-compose.yml restart frontend
 
 # Rebuild and restart a specific service
-docker-compose -f docker/docker-compose.yml up -d --build backend
+docker compose -f docker/docker-compose.yml up -d --build backend
 ```
 
 ## Access Points
@@ -84,7 +99,7 @@ docker-compose -f docker/docker-compose.yml up -d --build backend
 
 1. Build and start:
    ```bash
-   docker-compose -f docker/docker-compose.yml up -d --build
+   docker compose -f docker/docker-compose.yml up -d --build
    ```
 
 2. Wait for database seeding (automatic on first startup)
@@ -101,8 +116,8 @@ docker-compose -f docker/docker-compose.yml up -d --build backend
 To reset and re-seed the database (⚠️ deletes all data):
 
 ```bash
-docker-compose -f docker/docker-compose.yml down -v
-docker-compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 **Note**: Seeding only occurs if the database is empty. To skip seeding, set `SKIP_SEED=true` in the backend service environment.
@@ -118,17 +133,22 @@ docker-compose -f docker/docker-compose.yml up -d
 
 ## Troubleshooting
 
+**"docker compose: command not found" or "docker-compose: command not found"?**
+- **For V2 users**: Use `docker compose` (with space, no hyphen)
+- **For V1 users**: Use `docker-compose` (with hyphen)
+- Check which version you have: `docker compose version` or `docker-compose --version`
+
 **Login issues?**
-- Ensure backend is running: `docker-compose -f docker/docker-compose.yml ps`
-- Check backend logs: `docker-compose -f docker/docker-compose.yml logs backend`
+- Ensure backend is running: `docker compose -f docker/docker-compose.yml ps`
+- Check backend logs: `docker compose -f docker/docker-compose.yml logs backend`
 - Verify database is accessible
 
 **Frontend not loading?**
-- Check frontend logs: `docker-compose -f docker/docker-compose.yml logs frontend`
+- Check frontend logs: `docker compose -f docker/docker-compose.yml logs frontend`
 - Ensure frontend compiled successfully (look for "Compiled successfully!")
 
 **Database connection errors?**
 - Ensure database container is running
-- Check database logs: `docker-compose -f docker/docker-compose.yml logs db`
+- Check database logs: `docker compose -f docker/docker-compose.yml logs db`
 - Verify credentials match in `backend/config.py`
 

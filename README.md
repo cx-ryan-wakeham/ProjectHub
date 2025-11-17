@@ -56,45 +56,60 @@ ProjectHub is designed to help security professionals, developers, and students 
 - Node.js 10+ (for local development)
 - PostgreSQL (if running locally without Docker)
 
+### Docker Compose Version Note
+
+This documentation uses **Docker Compose V2** syntax (`docker compose` - no hyphen), which is the modern standard included with Docker Desktop and recent Docker installations.
+
+**If you have Docker Compose V1** (older standalone installation), replace `docker compose` with `docker-compose` (with hyphen) in all commands.
+
+**Check your version:**
+```bash
+# V2 (recommended)
+docker compose version
+
+# V1 (legacy)
+docker-compose --version
+```
+
 ### Key Commands
 
 #### Build and Start
 
 **Build all containers:**
 ```bash
-docker-compose -f docker/docker-compose.yml build
+docker compose -f docker/docker-compose.yml build
 ```
 
 **Build without cache (clean build):**
 ```bash
-docker-compose -f docker/docker-compose.yml build --no-cache
+docker compose -f docker/docker-compose.yml build --no-cache
 ```
 
 **Start all services:**
 ```bash
-docker-compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 **Build and start in one command:**
 ```bash
-docker-compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 #### Shutdown
 
 **Stop all services (keeps containers):**
 ```bash
-docker-compose -f docker/docker-compose.yml stop
+docker compose -f docker/docker-compose.yml stop
 ```
 
 **Stop and remove containers:**
 ```bash
-docker-compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml down
 ```
 
 **Stop and remove containers + volumes (⚠️ deletes database data):**
 ```bash
-docker-compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml down -v
 ```
 
 #### Useful Commands
@@ -102,22 +117,22 @@ docker-compose -f docker/docker-compose.yml down -v
 **View logs:**
 ```bash
 # All services
-docker-compose -f docker/docker-compose.yml logs -f
+docker compose -f docker/docker-compose.yml logs -f
 
 # Specific service
-docker-compose -f docker/docker-compose.yml logs -f backend
-docker-compose -f docker/docker-compose.yml logs -f frontend
+docker compose -f docker/docker-compose.yml logs -f backend
+docker compose -f docker/docker-compose.yml logs -f frontend
 ```
 
 **Check service status:**
 ```bash
-docker-compose -f docker/docker-compose.yml ps
+docker compose -f docker/docker-compose.yml ps
 ```
 
 **Restart a specific service:**
 ```bash
-docker-compose -f docker/docker-compose.yml restart backend
-docker-compose -f docker/docker-compose.yml restart frontend
+docker compose -f docker/docker-compose.yml restart backend
+docker compose -f docker/docker-compose.yml restart frontend
 ```
 
 ### Running with Docker
@@ -130,7 +145,7 @@ cd ProjectHub
 
 2. Build and start all services:
 ```bash
-docker-compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 3. Wait for services to initialize (database seeding happens automatically on first startup)
@@ -154,8 +169,8 @@ The application automatically seeds the database with test data on first startup
 
 **Note**: Seeding only occurs if the database is empty. To re-seed, remove the database volume:
 ```bash
-docker-compose -f docker/docker-compose.yml down -v
-docker-compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml up -d
 ```
 
 To skip seeding, set the environment variable `SKIP_SEED=true` in the backend service.
