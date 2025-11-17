@@ -11,6 +11,13 @@ try:
 except ImportError:
     yaml = None
 
+try:
+    from PIL import Image
+    from PIL.ExifTags import TAGS
+except ImportError:
+    Image = None
+    TAGS = None
+
 def allowed_file(filename):
     """Check if file extension is allowed"""
     if '.' not in filename:
@@ -85,6 +92,49 @@ def process_yaml_file(file_path):
     except Exception as e:
         return {'error': str(e)}
 
+def process_image_file(file_path):
+    """Process image file and extract metadata using Pillow"""
+    if Image is None:
+        return {'error': 'PIL/Pillow library not installed'}
+    
+    try:
+        with Image.open(file_path) as img:
+            image_data = {
+                'format': img.format,
+                'mode': img.mode,
+                'size': img.size,
+                'width': img.width,
+                'height': img.height,
+            }
+            
+            # Extract EXIF data if available
+            exif_data = {}
+            if hasattr(img, '_getexif') and img._getexif() is not None:
+                exif = img._getexif()
+                for tag_id, value in exif.items():
+                    tag = TAGS.get(tag_id, tag_id)
+                    exif_data[tag] = str(value)
+            
+            # Try to get EXIF data using the newer method
+            if hasattr(img, 'getexif'):
+                exif = img.getexif()
+                if exif:
+                    for tag_id, value in exif.items():
+                        tag = TAGS.get(tag_id, tag_id)
+                        exif_data[tag] = str(value)
+            
+            if exif_data:
+                image_data['exif'] = exif_data
+            
+            # Get image info
+            if img.info:
+                image_data['info'] = {k: str(v) for k, v in img.info.items()}
+            
+            return image_data
+            
+    except Exception as e:
+        return {'error': str(e)}
+
 def extract_file_metadata(file_path):
     """Extract file metadata"""
     metadata = {}
@@ -103,6 +153,8 @@ def extract_file_metadata(file_path):
             metadata['pickle_data'] = process_pickle_file(file_path)
         elif ext in ['.yaml', '.yml']:
             metadata['yaml_data'] = process_yaml_file(file_path)
+        elif ext in ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp']:
+            metadata['image_data'] = process_image_file(file_path)
         
     except Exception as e:
         metadata['error'] = str(e)
