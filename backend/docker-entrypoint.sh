@@ -27,3 +27,4 @@ fi
 
 # Start the application
 exec python3 app.py
+
