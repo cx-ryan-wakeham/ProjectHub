@@ -1,0 +1,30 @@
+# Testing dependencies for ProjectHub Backend
+# REQUIRES PYTHON 3.7 or 3.8 (these old versions don't work with Python 3.13)
+# Tests use SQLite in-memory database, so PostgreSQL is not required
+
+# Same versions as production
+Flask==1.1.4
+Flask-SQLAlchemy==2.3.2
+SQLAlchemy==1.4.0
+Flask-CORS==3.0.7
+Flask-JWT-Extended==3.13.1
+PyJWT==1.6.4
+Werkzeug==1.0.1
+python-dotenv==0.10.0
+requests==2.20.0
+lxml==4.2.5
+Pillow==5.2.0
+PyYAML==3.13
+Jinja2==2.11.3
+
+# Pin MarkupSafe to compatible version with Jinja2 2.11.3
+MarkupSafe==1.1.1
+
+# Testing frameworks (older versions for Python 3.7/3.8)
+pytest==6.2.5
+pytest-cov==3.0.0
+pytest-flask==1.2.0
+
+# Note: psycopg2-binary and python-magic are excluded from test requirements
+# Tests use SQLite in-memory database instead of PostgreSQL
+
