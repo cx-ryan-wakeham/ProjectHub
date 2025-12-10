@@ -14,8 +14,8 @@ services:
 
   backend:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgresql://projecthub:password123@db:5432/projecthub
       DB_HOST: db

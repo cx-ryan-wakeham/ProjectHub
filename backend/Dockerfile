@@ -22,14 +22,14 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements
-COPY backend/requirements.txt .
+COPY requirements.txt .
 
 # Upgrade pip and install Python dependencies
 RUN pip3 install --upgrade pip setuptools wheel && \
     pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY backend/ .
+COPY . .
 
 # Fix line endings and permissions
 RUN dos2unix /app/*.sh 2>/dev/null || true && \
