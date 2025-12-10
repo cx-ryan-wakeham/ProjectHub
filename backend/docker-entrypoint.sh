@@ -11,7 +11,7 @@ attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
     # Try connecting with netcat or python
-    if nc -z $DB_HOST 5432 2>/dev/null || python3 -c "import socket; socket.create_connection(('$DB_HOST', 5432), timeout=2)" 2>/dev/null; then
+    if nc -z $DB_HOST 5432 2>/dev/null || python -c "import socket; socket.create_connection(('$DB_HOST', 5432), timeout=2)" 2>/dev/null; then
         echo "PostgreSQL is ready on $DB_HOST!"
         break
     fi
@@ -26,5 +26,5 @@ if [ $attempt -eq $max_attempts ]; then
 fi
 
 # Start the application
-exec python3 app.py
+exec python app.py
 
