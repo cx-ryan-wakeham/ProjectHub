@@ -22,8 +22,8 @@ services:
       JWT_SECRET: secret_key_12345
       AWS_ACCESS_KEY_ID: AKIAIOSFODNN7EXAMPLE
       AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-    ports:
-      - "5000:5000"
+    expose:
+      - 5000
     volumes:
       - ../backend:/app
       - uploads:/app/uploads
@@ -40,8 +40,8 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    expose:
+      - 3000
     environment:
       # Leave empty to use dynamic host detection in api.js
       # Or set explicitly: REACT_APP_API_URL: http://YOUR_SERVER_IP:5000/api
