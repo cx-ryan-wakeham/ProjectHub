@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM python:3.11-slim
 
 # Set environment variables
 ENV DATABASE_URL="postgresql://projecthub:password123@db:5432/projecthub"
@@ -10,12 +10,15 @@ EXPOSE 5000 8000 9000
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     postgresql-client \
     libpq-dev \
-    netcat \
+    netcat-openbsd \
     dos2unix \
+    gcc \
+    g++ \
+    libxml2-dev \
+    libxslt1-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -25,8 +28,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Upgrade pip and install Python dependencies
-RUN pip3 install --upgrade pip setuptools wheel && \
-    pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
