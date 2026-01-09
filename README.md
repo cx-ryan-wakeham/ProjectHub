@@ -159,7 +159,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 3. Wait a few seconds for services to initialize, then access the application:
    - **Main Application (via Nginx)**: http://localhost (or http://YOUR_SERVER_IP)
    - **Backend API**: http://localhost/api (or http://YOUR_SERVER_IP/api)
-   - **Admin Dashboard**: http://localhost/api/admin (or http://YOUR_SERVER_IP/api/admin)
+   - **Admin Dashboard**: http://localhost/admin (or http://YOUR_SERVER_IP/admin)
    - **API Health Check**: http://localhost/api/health (or http://YOUR_SERVER_IP/api/health)
    - **Database**: localhost:5432
 

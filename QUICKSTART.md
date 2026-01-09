@@ -75,7 +75,7 @@ docker compose -f docker/docker-compose.yml up -d --build backend
 
 - **Main Application (via Nginx)**: http://localhost (or http://YOUR_SERVER_IP)
 - **Backend API**: http://localhost/api (or http://YOUR_SERVER_IP/api)
-- **Admin Dashboard**: http://localhost/api/admin (or http://YOUR_SERVER_IP/api/admin)
+- **Admin Dashboard**: http://localhost/admin (or http://YOUR_SERVER_IP/admin)
 - **Database**: localhost:5432
 
 **Note**: All services are accessible through Nginx on port 80. The frontend is built during Docker build and served as static files through Nginx.
