@@ -150,22 +150,20 @@ cd ProjectHub
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-   **What happens during build:**
-   - Frontend is built (production build created in `frontend/build/`)
-   - Backend dependencies are installed
-   - Database container is prepared
-   - Nginx is configured to serve the built frontend files
+   **That's it!** The command will:
+   - Build the frontend (production build)
+   - Build the backend container
+   - Start all services (database, backend, frontend, nginx)
+   - Automatically seed the database with test data
 
-3. Wait for services to initialize (database seeding happens automatically on first startup)
-
-4. Access the application:
+3. Wait a few seconds for services to initialize, then access the application:
    - **Main Application (via Nginx)**: http://localhost (or http://YOUR_SERVER_IP)
    - **Backend API**: http://localhost/api (or http://YOUR_SERVER_IP/api)
    - **Admin Dashboard**: http://localhost/api/admin (or http://YOUR_SERVER_IP/api/admin)
    - **API Health Check**: http://localhost/api/health (or http://YOUR_SERVER_IP/api/health)
    - **Database**: localhost:5432
 
-   **Note**: The frontend is served through Nginx on port 80. The frontend development server (port 3000) is also available but not needed for normal use.
+   **Note**: The frontend is automatically built and served through Nginx on port 80. No additional build steps required.
 
 ### Database Seeding
 

@@ -99,36 +99,37 @@ docker compose -f docker/docker-compose.yml up -d --build backend
 
 ## First Time Setup
 
-1. Build and start all services:
+1. Clone the repository (if not already cloned):
+   ```bash
+   git clone <repository-url>
+   cd ProjectHub
+   ```
+
+2. Build and start all services:
    ```bash
    docker compose -f docker/docker-compose.yml up -d --build
    ```
    
-   This command will:
-   - Build the frontend (creates production build in `frontend/build/`)
+   **That's it!** This single command will:
+   - Build the frontend (production build happens automatically)
    - Build the backend container
    - Start all services (database, backend, frontend, nginx)
+   - Automatically seed the database with test data on first startup
 
-2. Wait for services to initialize:
-   - Database seeding happens automatically on first startup
-   - Creates admin user and test users
-   - Seeds projects, tasks, comments, messages (100 messages with 50 templates, spanning 6 months)
-   - Creates document records
-   
-   Check logs to verify services are ready:
-   ```bash
-   docker compose -f docker/docker-compose.yml logs -f
-   ```
-
-3. Access the application:
+3. Wait a few seconds for services to initialize, then access the application:
    - **Local**: http://localhost
    - **Remote Server**: http://YOUR_SERVER_IP (replace with your server's IP address)
    
    The application is served through Nginx on port 80, which proxies:
-   - Frontend static files (built during Docker build)
+   - Frontend static files (automatically built)
    - Backend API requests to `/api/*`
 
 4. Login with any of the default credentials (see above)
+
+**Optional**: Check logs to verify services are ready:
+```bash
+docker compose -f docker/docker-compose.yml logs -f
+```
 
 ## Re-seeding Database
 
@@ -163,13 +164,13 @@ docker compose -f docker/docker-compose.yml up -d
 - Verify database is accessible
 
 **Frontend not loading (403 Forbidden)?**
-- Ensure frontend was built during Docker build: `docker compose -f docker/docker-compose.yml logs frontend | grep -i build`
-- Check that `frontend/build` directory exists and contains `index.html`
-- Verify nginx can access the build directory: `docker compose -f docker/docker-compose.yml exec nginx ls -la /usr/share/nginx/html`
-- Rebuild if needed: `docker compose -f docker/docker-compose.yml up -d --build frontend nginx`
+- Wait a few seconds for the frontend build to complete (check logs: `docker compose -f docker/docker-compose.yml logs frontend`)
+- Verify nginx can access the build files: `docker compose -f docker/docker-compose.yml exec nginx ls -la /usr/share/nginx/html`
+- Rebuild if needed: `docker compose -f docker/docker-compose.yml up -d --build`
 
 **Nginx 403 errors?**
-- Frontend build may be missing. Rebuild: `docker compose -f docker/docker-compose.yml up -d --build`
+- Frontend build may still be in progress. Wait 30-60 seconds and refresh
+- Check frontend logs: `docker compose -f docker/docker-compose.yml logs frontend`
 - Check nginx logs: `docker compose -f docker/docker-compose.yml logs nginx`
 
 **Database connection errors?**

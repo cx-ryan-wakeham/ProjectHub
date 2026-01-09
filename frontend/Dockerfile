@@ -11,11 +11,12 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Build the production version
-RUN npm run build
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Expose port
 EXPOSE 3000
 
-CMD ["npm", "start"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
