@@ -26,7 +26,12 @@ function UserManagement({ user }) {
       setUsers(response.data.users || []);
     } catch (err) {
       console.error('Error loading users:', err);
-      setError('Failed to load users');
+      const errorMessage = err.response?.data?.error || 
+                           err.response?.statusText || 
+                           err.message || 
+                           'Failed to load users';
+      const statusCode = err.response?.status;
+      setError(`Failed to load users${statusCode ? ` (${statusCode})` : ''}: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
