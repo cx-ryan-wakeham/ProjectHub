@@ -90,10 +90,12 @@ docker compose -f docker/docker-compose.yml build --no-cache
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-**Build and start in one command:**
+**Build and start in one command (recommended):**
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
 ```
+
+**Note**: The frontend is automatically built during the Docker build process. The production build is created in `frontend/build/` and served by Nginx on port 80.
 
 #### Shutdown
 
@@ -148,15 +150,20 @@ cd ProjectHub
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-3. Wait for services to initialize (database seeding happens automatically on first startup)
+   **That's it!** The command will:
+   - Build the frontend (production build)
+   - Build the backend container
+   - Start all services (database, backend, frontend, nginx)
+   - Automatically seed the database with test data
 
-4. Access the application:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **Admin Dashboard**: http://localhost:5000/admin
-- **API Health Check**: http://localhost:5000/api/health
-- **Nginx (Production)**: http://localhost:80
-- **Database**: localhost:5432
+3. Wait a few seconds for services to initialize, then access the application:
+   - **Main Application (via Nginx)**: http://localhost (or http://YOUR_SERVER_IP)
+   - **Backend API**: http://localhost/api (or http://YOUR_SERVER_IP/api)
+   - **Admin Dashboard**: http://localhost/admin (or http://YOUR_SERVER_IP/admin)
+   - **API Health Check**: http://localhost/api/health (or http://YOUR_SERVER_IP/api/health)
+   - **Database**: localhost:5432
+
+   **Note**: The frontend is automatically built and served through Nginx on port 80. No additional build steps required.
 
 ### Database Seeding
 

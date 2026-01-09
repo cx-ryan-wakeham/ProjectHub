@@ -50,7 +50,8 @@ def log_user_action(user_id, action, details=None):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
+    ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""
     
@@ -65,8 +66,8 @@ def log_login_attempt(username, password, success=False):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
     ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else "N/A"
     ip_address = ctx.request.remote_addr if ctx and hasattr(ctx, 'request') and ctx.request else "unknown"
     
     status = "SUCCESS" if success else "FAILED"
@@ -77,7 +78,8 @@ def log_api_request(user_id, endpoint, request_data):
     logger = logging.getLogger('projecthub')
     
     # Get request ID
-    req_id = request_id if request_id else "N/A"
+    ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else "N/A"
     duration = get_request_duration()
     duration_str = f" ({duration:.3f}s)" if duration else ""
     

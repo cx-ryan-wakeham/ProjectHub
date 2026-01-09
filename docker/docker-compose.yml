@@ -49,8 +49,15 @@ services:
     volumes:
       - ../frontend:/app
       - /app/node_modules
+      - frontend_build:/build-output
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "test", "-f", "/build-output/.ready", "-a", "-f", "/build-output/index.html"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
     networks:
       - app-network
 
@@ -60,9 +67,10 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ../frontend/build:/usr/share/nginx/html
+      - frontend_build:/usr/share/nginx/html
     depends_on:
-      - frontend
+      frontend:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -70,6 +78,7 @@ volumes:
   postgres_data:
   uploads:
   logs:
+  frontend_build:
 
 networks:
   app-network:

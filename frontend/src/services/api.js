@@ -5,9 +5,9 @@ const getApiBaseUrl = () => {
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
-  // Use the same host as the frontend, but port 5000
-  const hostname = window.location.hostname;
-  return `http://${hostname}:5000/api`;
+  // Use relative path - nginx will proxy to backend
+  // This works because frontend is served through nginx on port 80
+  return '/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

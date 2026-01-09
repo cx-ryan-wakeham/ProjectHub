@@ -19,7 +19,7 @@ def get_users():
     """Get all users"""
     # Access request context
     ctx = get_request_context()
-    req_id = request_id if request_id else 'N/A'
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
     ip_address = get_request_metadata('ip_address', 'unknown')
     
     search = request.args.get('search', '')

@@ -73,10 +73,12 @@ docker compose -f docker/docker-compose.yml up -d --build backend
 
 ## Access Points
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **Nginx**: http://localhost:80
+- **Main Application (via Nginx)**: http://localhost (or http://YOUR_SERVER_IP)
+- **Backend API**: http://localhost/api (or http://YOUR_SERVER_IP/api)
+- **Admin Dashboard**: http://localhost/admin (or http://YOUR_SERVER_IP/admin)
 - **Database**: localhost:5432
+
+**Note**: All services are accessible through Nginx on port 80. The frontend is built during Docker build and served as static files through Nginx.
 
 ## Default Credentials
 
@@ -97,19 +99,37 @@ docker compose -f docker/docker-compose.yml up -d --build backend
 
 ## First Time Setup
 
-1. Build and start:
+1. Clone the repository (if not already cloned):
+   ```bash
+   git clone <repository-url>
+   cd ProjectHub
+   ```
+
+2. Build and start all services:
    ```bash
    docker compose -f docker/docker-compose.yml up -d --build
    ```
+   
+   **That's it!** This single command will:
+   - Build the frontend (production build happens automatically)
+   - Build the backend container
+   - Start all services (database, backend, frontend, nginx)
+   - Automatically seed the database with test data on first startup
 
-2. Wait for database seeding (automatic on first startup)
-   - Creates admin user and test users
-   - Seeds projects, tasks, comments, messages (100 messages with 50 templates, spanning 6 months)
-   - Creates document records
-
-3. Access the application at http://localhost:3000
+3. Wait a few seconds for services to initialize, then access the application:
+   - **Local**: http://localhost
+   - **Remote Server**: http://YOUR_SERVER_IP (replace with your server's IP address)
+   
+   The application is served through Nginx on port 80, which proxies:
+   - Frontend static files (automatically built)
+   - Backend API requests to `/api/*`
 
 4. Login with any of the default credentials (see above)
+
+**Optional**: Check logs to verify services are ready:
+```bash
+docker compose -f docker/docker-compose.yml logs -f
+```
 
 ## Re-seeding Database
 
@@ -143,9 +163,15 @@ docker compose -f docker/docker-compose.yml up -d
 - Check backend logs: `docker compose -f docker/docker-compose.yml logs backend`
 - Verify database is accessible
 
-**Frontend not loading?**
+**Frontend not loading (403 Forbidden)?**
+- Wait a few seconds for the frontend build to complete (check logs: `docker compose -f docker/docker-compose.yml logs frontend`)
+- Verify nginx can access the build files: `docker compose -f docker/docker-compose.yml exec nginx ls -la /usr/share/nginx/html`
+- Rebuild if needed: `docker compose -f docker/docker-compose.yml up -d --build`
+
+**Nginx 403 errors?**
+- Frontend build may still be in progress. Wait 30-60 seconds and refresh
 - Check frontend logs: `docker compose -f docker/docker-compose.yml logs frontend`
-- Ensure frontend compiled successfully (look for "Compiled successfully!")
+- Check nginx logs: `docker compose -f docker/docker-compose.yml logs nginx`
 
 **Database connection errors?**
 - Ensure database container is running
