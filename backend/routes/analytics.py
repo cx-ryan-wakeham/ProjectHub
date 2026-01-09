@@ -24,7 +24,7 @@ def get_stats():
     timestamp = get_utc_timestamp()
     
     ctx = get_request_context()
-    req_id = request_id if request_id else 'N/A'
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
     
     stats = {
         'user_count': query_helper.count_users(),
@@ -54,13 +54,15 @@ def search():
     
     query_helper = QueryHelper()
     search_time = get_utc_now()
+    ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
     
     results = {
         'query': search_term,
         'users': [u.to_dict() for u in query_helper.search_users(search_term)],
         'projects': [p.to_dict() for p in query_helper.search_projects(search_term)],
         'search_time': search_time.isoformat(),
-        'request_id': request_id if request_id else 'N/A'
+        'request_id': req_id
     }
     
     log_user_action(user.id, 'analytics_search', {'term': search_term})
@@ -78,10 +80,12 @@ def get_user(user_id):
         return jsonify({'error': 'User not found'}), 404
     
     fetched_at = get_utc_now()
+    ctx = get_request_context()
+    req_id = ctx.request_id if ctx and hasattr(ctx, 'request_id') else 'N/A'
     
     return jsonify({
         'user': user.to_dict(),
         'fetched_at': fetched_at.isoformat(),
-        'request_id': request_id if request_id else 'N/A'
+        'request_id': req_id
     })
 
