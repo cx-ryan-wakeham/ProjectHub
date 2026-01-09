@@ -12,6 +12,10 @@ if [ -d "/build-output" ]; then
     rm -rf /build-output/* /build-output/.[!.]* /build-output/..?* 2>/dev/null || true
     cp -r /app/build/. /build-output/
     echo "Build files copied successfully"
+    
+    # Create a ready file to signal that build is complete
+    touch /build-output/.ready
+    echo "Build ready signal created"
 else
     echo "Warning: /build-output directory not found, build files not copied to shared volume"
 fi
