@@ -131,7 +131,7 @@ paths:
       tags:
         - Authentication
       summary: User logout
-      description: Logout current user. Note: Tokens are stateless and never expire.
+      description: "Logout current user. Note: Tokens are stateless and never expire."
       operationId: logout
       security:
         - bearerAuth: []
