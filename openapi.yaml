@@ -84,6 +84,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/login:
     post:
@@ -125,6 +129,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/logout:
     post:
@@ -167,6 +175,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /auth/reset-password:
     post:
@@ -205,8 +217,16 @@ paths:
                     type: string
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /projects:
     get:
@@ -242,6 +262,10 @@ paths:
                       $ref: '#/components/schemas/Project'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -283,6 +307,10 @@ paths:
                     $ref: '#/components/schemas/Project'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /projects/{projectId}:
     get:
@@ -311,6 +339,10 @@ paths:
                     $ref: '#/components/schemas/Project'
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     put:
       tags:
@@ -352,6 +384,10 @@ paths:
                     $ref: '#/components/schemas/Project'
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -379,6 +415,10 @@ paths:
                     type: string
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /projects/{projectId}/dashboard:
     get:
@@ -422,6 +462,10 @@ paths:
                         type: integer
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /projects/{projectId}/tasks:
     get:
@@ -462,6 +506,10 @@ paths:
                       $ref: '#/components/schemas/Task'
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /tasks:
     get:
@@ -505,6 +553,10 @@ paths:
                       $ref: '#/components/schemas/Task'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -555,6 +607,10 @@ paths:
                     $ref: '#/components/schemas/Task'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /tasks/{taskId}:
     get:
@@ -583,6 +639,10 @@ paths:
                     $ref: '#/components/schemas/Task'
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     put:
       tags:
@@ -633,6 +693,10 @@ paths:
                     $ref: '#/components/schemas/Task'
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -660,6 +724,10 @@ paths:
                     type: string
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /tasks/{taskId}/comments:
     get:
@@ -690,6 +758,10 @@ paths:
                       $ref: '#/components/schemas/Comment'
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -731,6 +803,10 @@ paths:
                     $ref: '#/components/schemas/Comment'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /documents:
     get:
@@ -760,6 +836,10 @@ paths:
                       $ref: '#/components/schemas/Document'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -803,6 +883,10 @@ paths:
                     description: File metadata extracted from the document
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /documents/{documentId}:
     get:
@@ -831,6 +915,10 @@ paths:
                     $ref: '#/components/schemas/Document'
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -858,6 +946,10 @@ paths:
                     type: string
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /documents/{documentId}/download:
     get:
@@ -884,6 +976,10 @@ paths:
                 format: binary
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /documents/{documentId}/metadata:
     get:
@@ -915,6 +1011,10 @@ paths:
                     description: File metadata extracted from the document
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /messages:
     get:
@@ -971,6 +1071,10 @@ paths:
                         type: integer
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
@@ -1012,6 +1116,10 @@ paths:
                     $ref: '#/components/schemas/Message'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /messages/{messageId}:
     get:
@@ -1040,6 +1148,10 @@ paths:
                     $ref: '#/components/schemas/Message'
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -1067,6 +1179,10 @@ paths:
                     type: string
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /messages/search:
     get:
@@ -1100,6 +1216,10 @@ paths:
                       $ref: '#/components/schemas/Message'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/projects:
     get:
@@ -1156,6 +1276,10 @@ paths:
                     $ref: '#/components/schemas/Project'
         '404':
           description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/projects/{projectId}/tasks:
     get:
@@ -1251,6 +1375,10 @@ paths:
                     $ref: '#/components/schemas/Task'
         '404':
           description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/tasks/{taskId}/comments:
     get:
@@ -1328,6 +1456,10 @@ paths:
                     $ref: '#/components/schemas/Document'
         '404':
           description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/messages:
     get:
@@ -1380,9 +1512,13 @@ paths:
                 type: object
                 properties:
                   message:
-                    $ref: '#/components/schemas/Message'
+                      $ref: '#/components/schemas/Message'
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /analytics/stats:
     get:
@@ -1422,6 +1558,10 @@ paths:
                     type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /analytics/search:
     get:
@@ -1464,8 +1604,16 @@ paths:
                     type: string
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /analytics/user/{userId}:
     get:
@@ -1499,8 +1647,16 @@ paths:
                     type: string
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/users:
     get:
@@ -1577,6 +1733,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/users/{userId}:
     get:
@@ -1603,6 +1763,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     put:
       tags:
@@ -1649,6 +1813,10 @@ paths:
                     $ref: '#/components/schemas/User'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -1676,6 +1844,10 @@ paths:
                     type: string
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /v1/stats:
     get:
@@ -1746,6 +1918,10 @@ paths:
                       $ref: '#/components/schemas/Task'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
