@@ -19,10 +19,10 @@ info:
     email: security-demo@projecthub.com
 
 servers:
+  - url: http://172.35.1.192
+    description: Production server
   - url: http://localhost:5000/api
     description: Local development server
-  - url: https://api.projecthub.demo
-    description: Demo server
 
 tags:
   - name: Authentication
