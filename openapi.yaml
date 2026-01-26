@@ -35,6 +35,8 @@ tags:
     description: Document upload and management endpoints
   - name: Messages
     description: Messaging and communication endpoints
+  - name: Analytics
+    description: Analytics and reporting endpoints
 
 paths:
   /auth/register:
@@ -173,6 +175,54 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset user password
+      description: Reset password for a user. Vulnerable to broken authentication - no token validation or email verification.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - new_password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                new_password:
+                  type: string
+                  format: password
+                  example: newpassword123
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
           content:
             application/json:
               schema:
@@ -363,6 +413,97 @@ paths:
                 properties:
                   message:
                     type: string
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{projectId}/dashboard:
+    get:
+      tags:
+        - Projects
+      summary: Get project dashboard
+      description: Get project dashboard with tasks and documents. Vulnerable to IDOR.
+      operationId: getProjectDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Project dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project:
+                    $ref: '#/components/schemas/Project'
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  stats:
+                    type: object
+                    properties:
+                      total_tasks:
+                        type: integer
+                      total_documents:
+                        type: integer
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{projectId}/tasks:
+    get:
+      tags:
+        - Projects
+      summary: Get project tasks
+      description: Get all tasks for a project. Vulnerable to SQL injection in search parameter.
+      operationId: getProjectTasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
         '404':
           description: Project not found
           content:
@@ -737,6 +878,9 @@ paths:
                     type: string
                   document:
                     $ref: '#/components/schemas/Document'
+                  metadata:
+                    type: object
+                    description: File metadata extracted from the document
         '400':
           description: Bad request
           content:
@@ -837,12 +981,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /documents/{documentId}/metadata:
+    get:
+      tags:
+        - Documents
+      summary: Get document metadata
+      description: Retrieve document metadata information. Vulnerable to IDOR.
+      operationId: getDocumentMetadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+                  metadata:
+                    type: object
+                    description: File metadata extracted from the document
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /messages:
     get:
       tags:
         - Messages
       summary: List messages
-      description: Get a list of messages. Vulnerable to IDOR and broken access control.
+      description: Get a list of messages. Vulnerable to IDOR and broken access control. Supports pagination.
       operationId: listMessages
       security:
         - bearerAuth: []
@@ -855,6 +1034,18 @@ paths:
           in: query
           schema:
             type: integer
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            default: 10
       responses:
         '200':
           description: List of messages
@@ -867,6 +1058,17 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Message'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                      pages:
+                        type: integer
         '401':
           description: Unauthorized
           content:
@@ -977,6 +1179,43 @@ paths:
                     type: string
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/search:
+    get:
+      tags:
+        - Messages
+      summary: Search messages
+      description: Search messages by content or subject. Vulnerable to SQL injection.
+      operationId: searchMessages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (vulnerable to SQL injection)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '400':
+          description: Bad request
           content:
             application/json:
               schema:
@@ -1276,6 +1515,409 @@ paths:
                     $ref: '#/components/schemas/Message'
         '404':
           description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /analytics/stats:
+    get:
+      tags:
+        - Analytics
+      summary: Get application statistics
+      description: Get application-wide statistics. Requires authentication.
+      operationId: getAnalyticsStats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Application statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_count:
+                    type: integer
+                  project_count:
+                    type: integer
+                  task_count:
+                    type: integer
+                  document_count:
+                    type: integer
+                  message_count:
+                    type: integer
+                  comment_count:
+                    type: integer
+                  current_time:
+                    type: string
+                    format: date-time
+                  timestamp:
+                    type: number
+                  request_id:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /analytics/search:
+    get:
+      tags:
+        - Analytics
+      summary: Search across users and projects
+      description: Search across users and projects. Requires authentication.
+      operationId: analyticsSearch
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  search_time:
+                    type: string
+                    format: date-time
+                  request_id:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /analytics/user/{userId}:
+    get:
+      tags:
+        - Analytics
+      summary: Get user analytics
+      description: Get user details and analytics. Requires authentication. Vulnerable to IDOR.
+      operationId: getUserAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  fetched_at:
+                    type: string
+                    format: date-time
+                  request_id:
+                    type: string
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/users:
+    get:
+      tags:
+        - Projects
+      summary: List all users (v1 API)
+      description: Get a list of all users. No authentication required. Vulnerable to SQL injection in search parameter.
+      operationId: listUsersV1
+      parameters:
+        - name: search
+          in: query
+          description: Search term (vulnerable to SQL injection)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  request_id:
+                    type: string
+                  count:
+                    type: integer
+
+    post:
+      tags:
+        - Projects
+      summary: Create user (v1 API)
+      description: Create a new user. Requires authentication. Vulnerable to broken access control.
+      operationId: createUserV1
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [admin, project_manager, team_member]
+                  default: team_member
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/users/{userId}:
+    get:
+      tags:
+        - Projects
+      summary: Get user by ID (v1 API)
+      description: Retrieve a specific user. No authentication required. Vulnerable to IDOR.
+      operationId: getUserV1
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Projects
+      summary: Update user (v1 API)
+      description: Update user details. Requires authentication. Vulnerable to broken access control.
+      operationId: updateUserV1
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [admin, project_manager, team_member]
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Projects
+      summary: Delete user (v1 API)
+      description: Delete a user. Requires authentication. Vulnerable to broken access control.
+      operationId: deleteUserV1
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/stats:
+    get:
+      tags:
+        - Projects
+      summary: Get statistics (v1 API)
+      description: Get application statistics. No authentication required.
+      operationId: getStatsV1
+      responses:
+        '200':
+          description: Application statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_users:
+                    type: integer
+                  total_projects:
+                    type: integer
+                  total_tasks:
+                    type: integer
+                  total_documents:
+                    type: integer
+                  total_messages:
+                    type: integer
+                  generated_at:
+                    type: string
+                    format: date-time
+                  request_id:
+                    type: string
+
+  /v1/search:
+    get:
+      tags:
+        - Projects
+      summary: Global search (v1 API)
+      description: Global search across users, projects, and tasks. No authentication required. Vulnerable to SQL injection.
+      operationId: globalSearchV1
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (vulnerable to SQL injection)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:
+                    type: string
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  projects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad request
           content:
             application/json:
               schema:
